@@ -4,7 +4,6 @@ import os
 
 finance = {}
 profile = {}
-profilearr = [0, 0]
 
 
 class MyClient(discord.Client):
@@ -16,6 +15,7 @@ class MyClient(discord.Client):
         if finance.get(message.author.id) == None:
             finance[message.author.id] = 2
         if profile.get(message.author.id) == None:
+            profilearr = [0, 0]
             profile[message.author.id] = profilearr
         if message.author == client.user:
             return
