@@ -4,6 +4,8 @@ import os
 
 finance = {}
 
+ljl = 1
+
 
 class MyClient(discord.Client):
     async def on_ready(self):
