@@ -25,6 +25,7 @@ async def on_message(message):
         finance[message.author.id] = 2
     else:
         finance[message.author.id] += 1
+    await bot.process_commands(message)
 
 
 @bot.command()
