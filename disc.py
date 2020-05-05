@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 import random
 import os
+import asyncio
 
 bot = commands.Bot(command_prefix='$')
 client = discord.Client()
@@ -47,7 +48,7 @@ async def profiler(ctx):
                                                  profile[ctx.author.id][1]))
 
 
-@client.event
+@bot.event
 async def on_message(ctx):
     if profile.get(ctx.author.id) == None:
         profile[ctx.author.id] = profilearr
@@ -63,4 +64,3 @@ async def on_message(ctx):
 
 token = os.environ.get('BOT_TOKEN')
 bot.run(str(token))
-
