@@ -45,7 +45,7 @@ class MyClient(discord.Client):
         if message.content.startswith("$топ"):
             await message.channel.send()
         if message.content.startswith("$give"):
-            givearr = message.content.split()
+            givearr = message.content.split(",")
             givemember = discord.utils.find(lambda m: m.name == arr[1], channel.guild.members)
             await message.channel.send(givemember.id)
 
