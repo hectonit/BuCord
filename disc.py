@@ -1,56 +1,66 @@
 import discord
+from discord.ext import commands
 import random
 import os
+
+bot = commands.Bot(command_prefix='$')
+client = discord.Client()
 
 finance = {}
 profile = {}
 profilearr = [0, 0]
 
 
-class MyClient(discord.Client):
-    async def on_ready(self):
-        print('Logged on as  {0} !'.format(self.user))
-
-    async def on_message(self, message):
-        print('Message from  {0.author} :  {0.content} '.format(message))
-        if finance.get(message.author.id) == None:
-            finance[message.author.id] = 2
-        if profile.get(message.author.id) == None:
-            profile[message.author.id] = profilearr
-        if message.author == client.user:
-            return
-        finance[message.author.id] += 1
-        profile[message.author.id][0] += 1
-        if profile[message.author.id][0] >= 100:
-            profile[message.author.id][1] += 1
-        if message.content.startswith('$hello'):
-            await message.channel.send('Hello!')
-        if message.content.startswith("$ставка"):
-            arr = message.content.split()
-            lol = arr[len(arr) - 1]
-            if int(lol) > finance[message.author.id] or int(lol)<=0:
-                await message.channel.send("Число введено неверно.")
-            else:
-                multi = random.randint(0, 20) / 10
-                finalresult = int(int(lol) * multi)
-                finance[message.author.id] -= int(lol)
-                finance[message.author.id] += finalresult
-                await message.channel.send("@{}, вы выиграли {} монет".format(message.author, finalresult))
-        if message.content.startswith("$баланс"):
-            await message.channel.send("@{}, ваш баланс: {}".format(message.author, finance[message.author.id]))
-        if message.content.startswith("$профиль"):
-            await message.channel.send(
-                "@{}, ваши очки: {}, уровень: {}".format(message.author, profile[message.author.id][0],
-                                                         profile[message.author.id][1]))
-        if message.content.startswith("$топ"):
-            await message.channel.send()
-        if message.content.startswith("$give"):
-            givearr = message.content.split(",")
-            givemember = discord.utils.find(lambda m: m.name == arr[1], channel.guild.members)
-            await message.channel.send(givemember)
+@bot.command()
+async def test(ctx, arg):
+    await ctx.send(arg)
 
 
+@bot.command()
+async def stavka(ctx, arg):
+    if profile.get(ctx.author.id) == None:
+        profile[ctx.author.id] = profilearr
+    arg = int(arg)
+    if arg > finance[ctx.author.id] or arg <= 0:
+        await ctx.send("Число введено неверно.")
+    else:
+        multi = random.randint(0, 20) / 10
+        finalresult = int(arg * multi)
+        finance[ctx.author.id] -= arg
+        finance[ctx.author.id] += finalresult
+        await ctx.send("@{}, вы выиграли {} монет".format(ctx.author, finalresult))
 
-client = MyClient()
+
+@bot.command()
+async def balans(ctx):
+    if finance.get(ctx.author.id) == None:
+        finance[ctx.author.id] = 2
+    await ctx.send("@{}, ваш баланс: {}".format(ctx.author, finance[ctx.author.id]))
+
+
+@bot.command()
+async def profiler(ctx):
+    if profile.get(ctx.author.id) == None:
+        profile[ctx.author.id] = profilearr
+    await ctx.send(
+        "@{}, ваши очки: {}, уровень: {}".format(ctx.author, profile[ctx.author.id][0],
+                                                 profile[ctx.author.id][1]))
+
+
+@client.event
+async def on_message(ctx):
+    if profile.get(ctx.author.id) == None:
+        profile[ctx.author.id] = profilearr
+    else:
+        profile[ctx.author.id][0] += 1
+        if profile[ctx.author.id][0] >= 100:
+            profile[ctx.author.id][1] += 1
+    if finance.get(ctx.author.id) == None:
+        finance[ctx.author.id] = 2
+    else:
+        finance[ctx.author.id] += 1
+
+
 token = os.environ.get('BOT_TOKEN')
-client.run(str(token))
+bot.run(str(token))
+
