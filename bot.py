@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 import random
+import os
 
 bot = commands.Bot(command_prefix='$')
 
@@ -59,4 +60,5 @@ async def on_message(ctx):
         finance[ctx.author.id] += 1
 
 
-bot.run('')
+token = os.environ.get('BOT_TOKEN')
+bot.run(str(token))
