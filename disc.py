@@ -12,6 +12,21 @@ profile = {}
 profilearr = [0, 0]
 
 
+
+@client.event
+async def on_message(ctx):
+    if profile.get(ctx.author.id) == None:
+        profile[ctx.author.id] = profilearr
+    else:
+        profile[ctx.author.id][0] += 1
+        if profile[ctx.author.id][0] >= 100:
+            profile[ctx.author.id][1] += 1
+    if finance.get(ctx.author.id) == None:
+        finance[ctx.author.id] = 2
+    else:
+        finance[ctx.author.id] += 1
+
+
 @bot.command()
 async def test(ctx, arg):
     await bot.process_commands(message)
@@ -50,20 +65,6 @@ async def profiler(ctx):
     await ctx.send(
         "@{}, ваши очки: {}, уровень: {}".format(ctx.author, profile[ctx.author.id][0],
                                                  profile[ctx.author.id][1]))
-
-
-@bot.event
-async def on_message(ctx):
-    if profile.get(ctx.author.id) == None:
-        profile[ctx.author.id] = profilearr
-    else:
-        profile[ctx.author.id][0] += 1
-        if profile[ctx.author.id][0] >= 100:
-            profile[ctx.author.id][1] += 1
-    if finance.get(ctx.author.id) == None:
-        finance[ctx.author.id] = 2
-    else:
-        finance[ctx.author.id] += 1
 
 
 token = os.environ.get('BOT_TOKEN')
