@@ -4,6 +4,7 @@ import random
 import os
 
 bot = commands.Bot(command_prefix='$')
+client = discord.Client()
 
 finance = {}
 profile = {}
@@ -46,7 +47,7 @@ async def profiler(ctx):
                                                  profile[ctx.author.id][1]))
 
 
-@bot.event(coro=True)
+@client.event
 async def on_message(ctx):
     if profile.get(ctx.author.id) == None:
         profile[ctx.author.id] = profilearr
