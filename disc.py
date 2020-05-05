@@ -14,17 +14,17 @@ profilearr = [0, 0]
 
 
 @client.event
-async def on_message(ctx):
-    if profile.get(ctx.author.id) == None:
-        profile[ctx.author.id] = profilearr
+async def on_message(message):
+    if profile.get(message.author.id) == None:
+        profile[message.author.id] = profilearr
     else:
-        profile[ctx.author.id][0] += 1
-        if profile[ctx.author.id][0] >= 100:
-            profile[ctx.author.id][1] += 1
-    if finance.get(ctx.author.id) == None:
-        finance[ctx.author.id] = 2
+        profile[message.author.id][0] += 1
+        if profile[message.author.id][0] >= 100:
+            profile[message.author.id][1] += 1
+    if finance.get(message.author.id) == None:
+        finance[message.author.id] = 2
     else:
-        finance[ctx.author.id] += 1
+        finance[message.author.id] += 1
 
 
 @bot.command()
