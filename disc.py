@@ -13,7 +13,7 @@ profilearr = [0, 0]
 
 
 
-@client.event
+@bot.event
 async def on_message(message):
     if profile.get(message.author.id) == None:
         profile[message.author.id] = profilearr
@@ -65,4 +65,3 @@ async def profiler(ctx):
 
 token = os.environ.get('BOT_TOKEN')
 bot.run(str(token))
-client.run(str(token))
