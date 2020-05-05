@@ -4,6 +4,7 @@ import os
 
 finance = {}
 profile = {}
+profilearr = [0, 0]
 
 
 class MyClient(discord.Client):
@@ -15,7 +16,6 @@ class MyClient(discord.Client):
         if finance.get(message.author.id) == None:
             finance[message.author.id] = 2
         if profile.get(message.author.id) == None:
-            profilearr = [0, 0]
             profile[message.author.id] = profilearr
         if message.author == client.user:
             return
@@ -28,8 +28,8 @@ class MyClient(discord.Client):
         if message.content.startswith("$ставка"):
             arr = message.content.split()
             lol = arr[len(arr) - 1]
-            if int(lol) > finance[message.author.id]:
-                await message.channel.send("У вас недостаточно средств")
+            if int(lol) > finance[message.author.id] or int(lol)<=0:
+                await message.channel.send("Число введено неверно.")
             else:
                 multi = random.randint(0, 20) / 10
                 finalresult = int(int(lol) * multi)
@@ -42,6 +42,13 @@ class MyClient(discord.Client):
             await message.channel.send(
                 "@{}, ваши очки: {}, уровень: {}".format(message.author, profile[message.author.id][0],
                                                          profile[message.author.id][1]))
+        if message.content.startswith("$топ"):
+            await message.channel.send()
+        if message.content.startswith("$give"):
+            givearr = message.content.split()
+            givemember = discord.utils.find(lambda m: m.name == arr[1], channel.guild.members)
+            print(givemember.id)
+
 
 
 client = MyClient()
