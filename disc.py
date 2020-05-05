@@ -14,11 +14,13 @@ profilearr = [0, 0]
 
 @bot.command()
 async def test(ctx, arg):
+    await bot.process_commands(message)
     await ctx.send(arg)
 
 
 @bot.command()
 async def stavka(ctx, arg):
+    await bot.process_commands(message)
     if profile.get(ctx.author.id) == None:
         profile[ctx.author.id] = profilearr
     arg = int(arg)
@@ -34,6 +36,7 @@ async def stavka(ctx, arg):
 
 @bot.command()
 async def balans(ctx):
+    await bot.process_commands(message)
     if finance.get(ctx.author.id) == None:
         finance[ctx.author.id] = 2
     await ctx.send("@{}, ваш баланс: {}".format(ctx.author, finance[ctx.author.id]))
@@ -41,6 +44,7 @@ async def balans(ctx):
 
 @bot.command()
 async def profiler(ctx):
+    await bot.process_commands(message)
     if profile.get(ctx.author.id) == None:
         profile[ctx.author.id] = profilearr
     await ctx.send(
