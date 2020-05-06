@@ -21,6 +21,7 @@ async def on_message(message):
         profile[message.author.id][0] += 1
         if profile[message.author.id][0] >= 100:
             profile[message.author.id][1] += 1
+            profile[message.author.id][0] = 0
     if finance.get(message.author.id) == None:
         finance[message.author.id] = 2
     else:
