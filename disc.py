@@ -69,6 +69,7 @@ async def top(ctx):
     torr = list(finance.values())
     torr.sort()
     torr = torr[len(torr) - 5:]
+    torr = torr[::-1]
     ind1 = "Нет информации"
     ind2 = "Нет информации"
     ind3 = "Нет информации"
@@ -86,7 +87,6 @@ async def top(ctx):
         elif v in torr and torr.index(v) == 4:
             ind5 = ("Пятое место - {} - {}".format(bot.get_user(k), finance[k]))
     await ctx.send("{}\n{}\n{}\n{}\n{}".format(ind1, ind2, ind3, ind4, ind5))
-
 
 token = os.environ.get('BOT_TOKEN')
 bot.run(str(token))
