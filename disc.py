@@ -94,22 +94,10 @@ async def top(ctx):
 
 @bot.command(pass_context=True)
 async def give(ctx, member: discord.Member, arg):
-    rolarr = []
-    for role in member.roles():
-        rolarr.append(role.id)
-    moder = 706208121487360030
-    if moder not in rolarr:
-        await ctx.channel.send("У вас недостаточно прав")
-        return
-    if finance.get(member.id) == None:
-        finance[member.id] = int(arg)
-        await ctx.channel.send("{} вам выдано {} монет".format(member.mention, arg))
-        return
     arg = int(arg)
     finance[member.id] += arg
     await ctx.channel.send("{} вам выдано {} монет".format(member.mention, arg))
     member = member
-
 
 token = os.environ.get('BOT_TOKEN')
 bot.run(str(token))
