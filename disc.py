@@ -92,11 +92,12 @@ async def top(ctx):
     await ctx.send("{}\n{}\n{}\n{}\n{}".format(ind1, ind2, ind3, ind4, ind5))
 
 
-# @bot.command()
-# async def give(ctx,discord: member, arg):
-#    finance[member.id] += arg
-#    await ctx.send(f"{member.mention}")
-#    member = member
+@bot.command(pass_context=True)
+async def give(ctx, member: discord.Member, arg):
+    arg = int(arg)
+    finance[member.id] += arg
+    await ctx.channel.send("{} вам выдано {} монет".format(member.mention, arg))
+    member = member
 
 
 token = os.environ.get('BOT_TOKEN')
