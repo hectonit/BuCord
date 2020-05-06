@@ -67,22 +67,22 @@ async def top(ctx):
     torr = list(finance.values())
     torr.sort()
     torr = torr[len(torr) - 5:]
-    ind1 = 0
-    ind2 = 0
-    ind3 = 0
-    ind4 = 0
-    ind5 = 0
+    ind1 = "Нет информации"
+    ind2 = "Нет информации"
+    ind3 = "Нет информации"
+    ind4 = "Нет информации"
+    ind5 = "Нет информации"
     for k, v in finance.items():
         if v in torr and torr.index(v) == 0:
-            ind1 = ("Первое место - {}".format(bot.get_user(k)))
+            ind1 = ("Первое место - {} - {}".format(bot.get_user(k), finance[k]))
         elif v in torr and torr.index(v) == 1:
-            ind2 = ("Второе место - {}".format(bot.get_user(k)))
+            ind2 = ("Второе место - {} - {}".format(bot.get_user(k), finance[k]))
         elif v in torr and torr.index(v) == 2:
-            ind3 = ("Третье место - {}".format(bot.get_user(k)))
+            ind3 = ("Третье место - {} - {}".format(bot.get_user(k), finance[k]))
         elif v in torr and torr.index(v) == 3:
-            ind4 = ("Четвертое место - {}".format(bot.get_user(k)))
+            ind4 = ("Четвертое место - {} - {}".format(bot.get_user(k), finance[k]))
         elif v in torr and torr.index(v) == 4:
-            ind5 = ("Пятое место - {}".format(bot.get_user(k)))
+            ind5 = ("Пятое место - {} - {}".format(bot.get_user(k), finance[k]))
     await ctx.send("{}\n{}\n{}\n{}\n{}".format(ind1, ind2, ind3, ind4, ind5))
 
 
