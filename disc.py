@@ -89,7 +89,7 @@ async def top(ctx):
             ind4 = ("Четвертое место - {} - {}".format(bot.get_user(k), finance[k]))
         elif v in torr and torr.index(v) == 4:
             ind5 = ("Пятое место - {} - {}".format(bot.get_user(k), finance[k]))
-    await ctx.send("{}\n{}\n{}\n{}\n{}".format(ind1, ind2, ind3, ind4, ind5))
+        await ctx.send("{}\n{}\n{}\n{}\n{}".format(ind1, ind2, ind3, ind4, ind5))
 
 
 @bot.command(pass_context=True)
