@@ -13,6 +13,8 @@ profile = {}
 
 @bot.event
 async def on_message(message):
+    if message.author.id == 706401122721595444:
+        return
     if profile.get(message.author.id) == None:
         profile[message.author.id] = [0, 0]
     else:
@@ -33,7 +35,7 @@ async def test(ctx, arg):
 
 
 @bot.command()
-async def stavka(ctx, arg):
+async def stavka(ctx, arg: int):
     if profile.get(ctx.author.id) == None:
         profile[ctx.author.id] = [0, 0]
     arg = int(arg)
@@ -76,6 +78,7 @@ async def top(ctx):
     ind4 = "Нет информации"
     ind5 = "Нет информации"
     for k, v in finance.items():
+        print(k)
         if v in torr and torr.index(v) == 0:
             ind1 = ("Первое место - {} - {}".format(bot.get_user(k), finance[k]))
         elif v in torr and torr.index(v) == 1:
@@ -87,6 +90,14 @@ async def top(ctx):
         elif v in torr and torr.index(v) == 4:
             ind5 = ("Пятое место - {} - {}".format(bot.get_user(k), finance[k]))
     await ctx.send("{}\n{}\n{}\n{}\n{}".format(ind1, ind2, ind3, ind4, ind5))
+
+
+# @bot.command()
+# async def give(ctx,discord: member, arg):
+#    finance[member.id] += arg
+#    await ctx.send(f"{member.mention}")
+#    member = member
+
 
 token = os.environ.get('BOT_TOKEN')
 bot.run(str(token))
