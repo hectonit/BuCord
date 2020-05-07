@@ -44,11 +44,13 @@ async def stavka(ctx, arg: int):
         await ctx.send("Число введено неверно.")
     else:
         multi = random.randint(0, 20) / 10
+        pot = random.randint(0, 100)
         finalresult = int(arg * multi)
         finance[ctx.author.id] -= arg
+        global jackpot
         jackpot += arg
         jackpot -= finalresult
-        if random.randint(0,100) == 5:
+        if pot == 5:
             finance[ctx.author.id] += jackpot
             await ctx.send("{}, поздравляем!Вы забрали джекпот!!!Он составлял {} монет!!!".format(ctx.author.mention,jackpot))
             jackpot = 10000
@@ -71,7 +73,7 @@ async def profiler(ctx, member: discord.Member):
         profile[member.id] = [0, 0]
     await ctx.send(
         "{}, ваши очки: {}, уровень: {}".format(member.mention, profile[member.id][0],
-                                                 profile[member.id][1]))
+                                                profile[member.id][1]))
     member = member
 
 
@@ -95,7 +97,7 @@ async def top(ctx):
                 biggest = v
                 bigkey = k
         checked.append(bigkey)
-        if bigkey > 0 and biggest >0:
+        if bigkey > 0 and biggest > 0:
             torr.append([biggest, bigkey])
     ind1 = ("Первое место - {} - {}".format(bot.get_user(torr[0][1]), torr[0][0]))
     if len(torr) >= 2:
@@ -126,6 +128,7 @@ async def give(ctx, member: discord.Member, arg):
     finance[member.id] += arg
     await ctx.channel.send("{} вам выдано {} монет".format(member.mention, arg))
     member = member
+
 
 @bot.command()
 async def jackpot_info(ctx):
