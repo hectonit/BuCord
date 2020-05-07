@@ -9,6 +9,7 @@ client = discord.Client()
 
 finance = {}
 profile = {}
+jackpot = 10000
 
 
 @bot.event
@@ -45,25 +46,33 @@ async def stavka(ctx, arg: int):
         multi = random.randint(0, 20) / 10
         finalresult = int(arg * multi)
         finance[ctx.author.id] -= arg
-        finance[ctx.author.id] += finalresult
-        await ctx.send("@{}, вы выиграли {} монет".format(ctx.author, finalresult))
+        jackpot += arg
+        jackpot -= finalresult
+        if random.randint(0,100) == 5:
+            finance[ctx.author.id] += jackpot
+            await ctx.send("{}, поздравляем!Вы забрали джекпот!!!Он составлял {} монет!!!".format(ctx.author.mention,jackpot))
+            jackpot = 10000
+        else:
+            finance[ctx.author.id] += finalresult
+            await ctx.send("{}, вы выиграли {} монет".format(ctx.author.mention, finalresult))
 
 
 @bot.command()
-async def balans(ctx):
-    if finance.get(ctx.author.id) == None:
-        finance[ctx.author.id] = 2
-    await ctx.send("@{}, ваш баланс: {}".format(ctx.author, finance[ctx.author.id]))
+async def balans(ctx, member: discord.Member):
+    if finance.get(member.id) == None:
+        finance[member.id] = 2
+    await ctx.send("{}, ваш баланс: {}".format(member.mention, finance[member.id]))
+    member = member
 
 
 @bot.command()
-async def profiler(ctx):
-    if profile.get(ctx.author.id) == None:
-        profile[ctx.author.id] = [0, 0]
-    print(ctx.author.id)
+async def profiler(ctx, member: discord.Member):
+    if profile.get(member.id) == None:
+        profile[member.id] = [0, 0]
     await ctx.send(
-        "@{}, ваши очки: {}, уровень: {}".format(ctx.author, profile[ctx.author.id][0],
-                                                 profile[ctx.author.id][1]))
+        "{}, ваши очки: {}, уровень: {}".format(member.mention, profile[member.id][0],
+                                                 profile[member.id][1]))
+    member = member
 
 
 @bot.command()
@@ -100,7 +109,6 @@ async def top(ctx):
     await ctx.send("{}\n{}\n{}\n{}\n{}".format(ind1, ind2, ind3, ind4, ind5))
 
 
-
 @bot.command(pass_context=True)
 async def give(ctx, member: discord.Member, arg):
     rolarr = []
@@ -118,6 +126,10 @@ async def give(ctx, member: discord.Member, arg):
     finance[member.id] += arg
     await ctx.channel.send("{} вам выдано {} монет".format(member.mention, arg))
     member = member
+
+@bot.command()
+async def jackpot_info(ctx):
+    await ctx.send("Джекпот составляет {} монет.".format(jackpot))
 
 token = os.environ.get('BOT_TOKEN')
 bot.run(str(token))
