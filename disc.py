@@ -68,28 +68,37 @@ async def profiler(ctx):
 
 @bot.command()
 async def top(ctx):
+    topfinance = finance
     torr = list(finance.values())
     torr.sort()
-    torr = torr[len(torr) - 5:]
-    torr = torr[::-1]
+    torr.clear()
+    checked = []
     ind1 = "Нет информации"
     ind2 = "Нет информации"
     ind3 = "Нет информации"
     ind4 = "Нет информации"
     ind5 = "Нет информации"
-    for k, v in finance.items():
-        print(k)
-        if v in torr and torr.index(v) == 0:
-            ind1 = ("Первое место - {} - {}".format(bot.get_user(k), finance[k]))
-        elif v in torr and torr.index(v) == 1:
-            ind2 = ("Второе место - {} - {}".format(bot.get_user(k), finance[k]))
-        elif v in torr and torr.index(v) == 2:
-            ind3 = ("Третье место - {} - {}".format(bot.get_user(k), finance[k]))
-        elif v in torr and torr.index(v) == 3:
-            ind4 = ("Четвертое место - {} - {}".format(bot.get_user(k), finance[k]))
-        elif v in torr and torr.index(v) == 4:
-            ind5 = ("Пятое место - {} - {}".format(bot.get_user(k), finance[k]))
+    for i in range(len(topfinance.items())):
+        biggest = 0
+        bigkey = 0
+        for k, v in topfinance.items():
+            if v > biggest and k not in checked:
+                biggest = v
+                bigkey = k
+        checked.append(bigkey)
+        if bigkey > 0 and biggest >0:
+            torr.append([biggest, bigkey])
+    ind1 = ("Первое место - {} - {}".format(bot.get_user(torr[0][1]), torr[0][0]))
+    if len(torr) >= 2:
+        ind2 = ("Второе место - {} - {}".format(bot.get_user(torr[1][1]), torr[1][0]))
+    if len(torr) >= 3:
+        ind3 = ("Третье место - {} - {}".format(bot.get_user(torr[2][1]), torr[2][0]))
+    if len(torr) >= 4:
+        ind4 = ("Четвертое место - {} - {}".format(bot.get_user(torr[3][1]), torr[3][0]))
+    if len(torr) >= 5:
+        ind5 = ("Пятое место - {} - {}".format(bot.get_user(torr[4][1]), torr[4][0]))
     await ctx.send("{}\n{}\n{}\n{}\n{}".format(ind1, ind2, ind3, ind4, ind5))
+
 
 
 @bot.command(pass_context=True)
