@@ -1,21 +1,38 @@
 import discord
 from discord.ext import commands
+from discord import utils
 import random
 import os
 import asyncio
+import time
 
 bot = commands.Bot(command_prefix='$')
 client = discord.Client()
 
 finance = {}
 profile = {}
+minefinance = {}
 jackpot = 10000
+dt = int(time.time())
+dt = dt // 60
 
+@bot.event
+async def on_ready():
+    print("ура!!!бот подключен")
 
 @bot.event
 async def on_message(message):
+    newdt = int(time.time())
+    newdt = newdt // 60
     if message.author.id == 706401122721595444:
         return
+    if newdt == dt:
+        pass
+    else:
+        if minefinance.get(message.author.id) == None:
+            minefinance[message.author.id] = 0
+        else:
+            minefinance[message.author.id] = minefinance[message.author.id] + newdt - dt
     if profile.get(message.author.id) == None:
         profile[message.author.id] = [0, 0]
     else:
@@ -52,7 +69,8 @@ async def stavka(ctx, arg: int):
         jackpot -= finalresult
         if pot == 5:
             finance[ctx.author.id] += jackpot
-            await ctx.send("{}, поздравляем!Вы забрали джекпот!!!Он составлял {} монет!!!".format(ctx.author.mention,jackpot))
+            await ctx.send(
+                "{}, поздравляем!Вы забрали джекпот!!!Он составлял {} монет!!!".format(ctx.author.mention, jackpot))
             jackpot = 10000
         else:
             finance[ctx.author.id] += finalresult
@@ -79,6 +97,8 @@ async def profiler(ctx, member: discord.Member):
 
 @bot.command()
 async def top(ctx):
+    if ctx.author.id == 706401122721595444:
+        return
     topfinance = finance
     torr = list(finance.values())
     torr.sort()
@@ -133,6 +153,18 @@ async def give(ctx, member: discord.Member, arg):
 @bot.command()
 async def jackpot_info(ctx):
     await ctx.send("Джекпот составляет {} монет.".format(jackpot))
+
+
+@bot.command()
+async def mine_info(ctx, member: discord.Member):
+    newdt = int(time.time())
+    newdt = newdt // 60
+    if minefinance.get(member.id) == None:
+        minefinance[member.id] = 0
+    else:
+        minefinance[member.id] = minefinance[member.id] + newdt - dt
+    await ctx.channel.send("{} , вы намайнили {} монет.".format(member.mention, minefinance[member.id]))
+
 
 token = os.environ.get('BOT_TOKEN')
 bot.run(str(token))
