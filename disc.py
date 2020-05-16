@@ -5,27 +5,38 @@ import random
 import os
 import asyncio
 import time
+import requests
+from bs4 import BeautifulSoup as BS
 
 bot = commands.Bot(command_prefix='$')
 client = discord.Client()
 
 finance = {}
+
 profile = {}
+
 minefinance = {}
+
 jackpot = 10000
+
 dt = int(time.time())
 dt = dt // 60
+
 
 @bot.event
 async def on_ready():
     print("ура!!!бот подключен")
 
+
 @bot.event
 async def on_message(message):
+    global dt
     newdt = int(time.time())
     newdt = newdt // 60
+
     if message.author.id == 706401122721595444:
         return
+
     if newdt == dt:
         pass
     else:
@@ -33,6 +44,8 @@ async def on_message(message):
             minefinance[message.author.id] = 0
         else:
             minefinance[message.author.id] = minefinance[message.author.id] + newdt - dt
+    dt = newdt
+
     if profile.get(message.author.id) == None:
         profile[message.author.id] = [0, 0]
     else:
@@ -40,11 +53,19 @@ async def on_message(message):
         if profile[message.author.id][0] >= 100:
             profile[message.author.id][1] += 1
             profile[message.author.id][0] = 0
+
     if finance.get(message.author.id) == None:
         finance[message.author.id] = 2
     else:
         finance[message.author.id] += 1
+
     await bot.process_commands(message)
+
+
+@bot.event
+async def on_command_error(ctx, error):
+    if isinstance(error, discord.ext.commands.errors.CommandNotFound):
+        await ctx.send('Команда не найдена')
 
 
 @bot.command()
@@ -157,13 +178,40 @@ async def jackpot_info(ctx):
 
 @bot.command()
 async def mine_info(ctx, member: discord.Member):
+    global dt
     newdt = int(time.time())
     newdt = newdt // 60
     if minefinance.get(member.id) == None:
         minefinance[member.id] = 0
     else:
         minefinance[member.id] = minefinance[member.id] + newdt - dt
+    dt = newdt
     await ctx.channel.send("{} , вы намайнили {} монет.".format(member.mention, minefinance[member.id]))
+
+
+@bot.command()
+async def miningvivod(ctx, arg: int):
+    if finance.get(ctx.author.id) == None:
+        finance[ctx.author.id] = 2
+    if minefinance.get(member.id) == None:
+        minefinance[ctx.author.id] = 2
+    if arg > minefinance[ctx.author.id] or arg <= 0:
+        await ctx.send("Число введено неверно.")
+    else:
+        finance[ctx.author.id] += arg
+        minefinance[ctx.author.id] -= arg
+        await ctx.send("Вы успешно вывели {} монет".format(arg))
+
+
+
+@bot.command()
+async def dollar(ctx):
+    r = requests.get("https://www.banki.ru/products/currency/cash/usd/krasnodar/")
+    html = BS(r.content, "html.parser")
+    course = html.select(".currency-table__large-text")
+    course = course[1].text
+    await ctx.send("Курс доллара: {} рублей".format(course))
+
 
 
 token = os.environ.get('BOT_TOKEN')
