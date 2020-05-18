@@ -6,10 +6,13 @@ import os
 import asyncio
 import time
 import requests
-from bs4 import BeautifulSoup as BS
+import json
+import brawlstats
 
 bot = commands.Bot(command_prefix='$')
 client = discord.Client()
+brawltoken = os.environ.get('BRAWLBOT_TOKEN')
+brawlclient = brawlstats.Client(brawltoken)
 
 finance = {}
 
@@ -22,10 +25,12 @@ jackpot = 10000
 dt = int(time.time())
 dt = dt // 60
 
+brawlplayers = {}
+
 
 @bot.event
 async def on_ready():
-    print("ура!!!бот подключен")
+    print("Bot logged as {}".format(client.user))
 
 
 @bot.event
@@ -40,10 +45,11 @@ async def on_message(message):
     if newdt == dt:
         pass
     else:
-        if minefinance.get(message.author.id) == None:
-            minefinance[message.author.id] = 0
-        else:
-            minefinance[message.author.id] = minefinance[message.author.id] + newdt - dt
+        for id in minefinance.keys():
+            if minefinance.get(id) == None:
+                minefinance[id] = 0
+            else:
+                minefinance[id] = minefinance[id] + newdt - dt
     dt = newdt
 
     if profile.get(message.author.id) == None:
@@ -203,14 +209,32 @@ async def miningvivod(ctx, arg: int):
         await ctx.send("Вы успешно вывели {} монет".format(arg))
 
 
-
 @bot.command()
 async def dollar(ctx):
-    r = requests.get("https://www.banki.ru/products/currency/cash/usd/krasnodar/")
-    html = BS(r.content, "html.parser")
-    course = html.select(".currency-table__large-text")
-    course = course[1].text
+    r = requests.get("https://www.cbr-xml-daily.ru/daily_json.js")
+    course = r.json()
+    course = course['Valute']['USD']['Value']
     await ctx.send("Курс доллара: {} рублей".format(course))
+
+
+@bot.command()
+async def registr(ctx, usertag):
+    user = brawlclient.get_player(usertag)
+    brawlplayers[ctx.author.id] = user
+    await ctx.send(
+        "Вы успешно зарегистрировались на нашем сервере! Ваш никнейм в игре Brawl Stars: {}! Если это не так , то обратитесь за помощью к модераторам!".format(
+            user.name))
+
+
+@bot.command()
+async def brawltrophies(ctx, member: discord.Member):
+    if brawlplayers.get(member.id) == None:
+        await ctx.send(
+            "Пользователь {} еще не зарегистрировался! Чтобы зарегистрироваться прейдите в канал 'регистрация'!".format(
+                member.mention))
+    else:
+        await ctx.send("У вас {} кубков в игре Brawl Stars".format(brawlplayers[member.id]["trophies"]))
+
 
 
 
