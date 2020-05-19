@@ -222,7 +222,6 @@ async def registr(ctx, usertag):
     user = {}
     club = {}
     club["name"] = (html.select(".shadow-normal"))[30].text
-    club["trophies"] =
     user["name"] = (html.select(".display-4"))[0].text
     user["trophies"] = (html.select(".shadow-normal"))[22].text
     user["club"] = (html.select(".shadow-normal"))[30].text
@@ -249,8 +248,7 @@ async def brawlclub(ctx, member: discord.Member):
             "Пользователь {} еще не зарегистрировался! Чтобы зарегистрироваться прейдите в канал 'регистрация'!".format(
                 member.mention))
     else:
-        await ctx.send()
-
+        await ctx.send("gg")
 
 
 token = os.environ.get('BOT_TOKEN')
