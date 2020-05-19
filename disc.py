@@ -29,8 +29,7 @@ brawlplayers = {}
 @bot.event
 async def on_ready():
     print("Bot logged as {}".format(bot.user))
-    game = discord.CustomActivity("Следит за сервером")
-    await bot.change_presence(status=discord.Status.idle, activity=game)
+    await bot.change_presence(activity = discord.Game("lol"))
 
 
 @bot.event
