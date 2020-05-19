@@ -29,6 +29,8 @@ brawlplayers = {}
 @bot.event
 async def on_ready():
     print("Bot logged as {}".format(bot.user))
+    game = discord.CustomActivity("Следит за сервером")
+    await bot.change_presence(status=discord.Status.idle, activity=game)
 
 
 @bot.event
@@ -73,8 +75,11 @@ async def on_command_error(ctx, error):
 
 
 @bot.command()
-async def test(ctx, arg):
-    await ctx.send(arg)
+async def test(ctx):
+    embed = discord.Embed()
+    embed.description = "kek"
+    embed.title = "lol"
+    await ctx.send(embed=embed)
 
 
 @bot.command()
