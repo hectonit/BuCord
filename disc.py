@@ -7,12 +7,10 @@ import asyncio
 import time
 import requests
 import json
-import brawlstats
+from bs4 import BeautifulSoup as BS
 
 bot = commands.Bot(command_prefix='$')
 client = discord.Client()
-brawltoken = os.environ.get('BRAWLBOT_TOKEN')
-brawlclient = brawlstats.Client(brawltoken)
 
 finance = {}
 
@@ -30,7 +28,7 @@ brawlplayers = {}
 
 @bot.event
 async def on_ready():
-    print("Bot logged as {}".format(client.user))
+    print("Bot logged as {}".format(bot.user))
 
 
 @bot.event
@@ -219,11 +217,19 @@ async def dollar(ctx):
 
 @bot.command()
 async def registr(ctx, usertag):
-    user = brawlclient.get_player(usertag)
+    r = requests.get("https://www.starlist.pro/stats/profile/{}".format(usertag))
+    html = BS(r.content, "html.parser")
+    user = {}
+    club = {}
+    club["name"] = (html.select(".shadow-normal"))[30].text
+    club["trophies"] =
+    user["name"] = (html.select(".display-4"))[0].text
+    user["trophies"] = (html.select(".shadow-normal"))[22].text
+    user["club"] = (html.select(".shadow-normal"))[30].text
     brawlplayers[ctx.author.id] = user
     await ctx.send(
         "Вы успешно зарегистрировались на нашем сервере! Ваш никнейм в игре Brawl Stars: {}! Если это не так , то обратитесь за помощью к модераторам!".format(
-            user.name))
+            user["name"]))
 
 
 @bot.command()
@@ -235,6 +241,15 @@ async def brawltrophies(ctx, member: discord.Member):
     else:
         await ctx.send("У вас {} кубков в игре Brawl Stars".format(brawlplayers[member.id]["trophies"]))
 
+
+@bot.command()
+async def brawlclub(ctx, member: discord.Member):
+    if brawlplayers.get(member.id) == None:
+        await ctx.send(
+            "Пользователь {} еще не зарегистрировался! Чтобы зарегистрироваться прейдите в канал 'регистрация'!".format(
+                member.mention))
+    else:
+        await ctx.send()
 
 
 
