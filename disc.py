@@ -7,6 +7,7 @@ import asyncio
 import time
 import requests
 import json
+import datetime
 from bs4 import BeautifulSoup as BS
 
 bot = commands.Bot(command_prefix='$')
@@ -25,11 +26,13 @@ dt = dt // 60
 
 brawlplayers = {}
 
+colors = [0xFF0000, 0x39d0d6, 0xff6699, 0x17f90f, 0x0f13f9, 0xdff90f, 0xff8100, 0x740001, 0x330066]
+
 
 @bot.event
 async def on_ready():
     print("Bot logged as {}".format(bot.user))
-    await bot.change_presence(activity = discord.Game("lol"))
+    await bot.change_presence(activity=discord.Game("Слежку за сервером BU TEAM"))
 
 
 @bot.event
@@ -73,29 +76,24 @@ async def on_command_error(ctx, error):
         await ctx.send('Команда не найдена')
 
 
-@bot.command()
-async def test(ctx):
-    embed = discord.Embed()
-    embed.description = "kek"
-    embed.title = "lol"
-    await ctx.send(embed=embed)
-
-
+# ready
 @bot.command()
 async def stavka(ctx, arg: int):
     if profile.get(ctx.author.id) == None:
         profile[ctx.author.id] = [0, 0]
     arg = int(arg)
     if arg > finance[ctx.author.id] or arg <= 0:
-        await ctx.send("Число введено неверно.")
+        await ctx.send("❌Число введено неверно.")
     else:
         multi = random.randint(0, 20) / 10
         pot = random.randint(0, 100)
         finalresult = int(arg * multi)
         finance[ctx.author.id] -= arg
-        global jackpot
+        global jackpot, colors
         jackpot += arg
         jackpot -= finalresult
+        emb = discord.Embed(color=random.choice(colors))
+        emb.title = ("Ставка: {}$\nМножитель: {}\nВыигрыш: {}$".format(arg, multi, finalresult))
         if pot == 5:
             finance[ctx.author.id] += jackpot
             await ctx.send(
@@ -103,19 +101,24 @@ async def stavka(ctx, arg: int):
             jackpot = 10000
         else:
             finance[ctx.author.id] += finalresult
-            await ctx.send("{}, вы выиграли {} монет".format(ctx.author.mention, finalresult))
+            await ctx.send(embed=emb)
 
 
+# ready
 @bot.command()
 async def balans(ctx, member: discord.Member):
+    global colors
     if finance.get(member.id) == None:
         finance[member.id] = 2
-    await ctx.send("{}, ваш баланс: {}".format(member.mention, finance[member.id]))
+    emb = discord.Embed(color=random.choice(colors))
+    emb.set_author(name="Баланс {} : {}$".format(member, finance[member.id]), icon_url=member.avatar_url)
+    await ctx.send(embed=emb)
     member = member
 
 
 @bot.command()
-async def profiler(ctx, member: discord.Member):
+async def usercard(ctx, member: discord.Member):
+    global colors
     if profile.get(member.id) == None:
         profile[member.id] = [0, 0]
     await ctx.send(
@@ -201,12 +204,12 @@ async def mine_info(ctx, member: discord.Member):
 async def miningvivod(ctx, arg: int):
     if finance.get(ctx.author.id) == None:
         finance[ctx.author.id] = 2
-    if minefinance.get(member.id) == None:
+    if minefinance.get(ctx.author.id) == None:
         minefinance[ctx.author.id] = 2
     if arg > minefinance[ctx.author.id] or arg <= 0:
         await ctx.send("Число введено неверно.")
     else:
-        finance[ctx.author.id] += arg
+        finance[ctx.author.id] += int(arg * 0,95)
         minefinance[ctx.author.id] -= arg
         await ctx.send("Вы успешно вывели {} монет".format(arg))
 
@@ -225,10 +228,10 @@ async def registr(ctx, usertag):
     html = BS(r.content, "html.parser")
     user = {}
     club = {}
-    club["name"] = (html.select(".shadow-normal"))[30].text
+    club["name"] = (html.select(".link"))[3].text
     user["name"] = (html.select(".display-4"))[0].text
     user["trophies"] = (html.select(".shadow-normal"))[22].text
-    user["club"] = (html.select(".shadow-normal"))[30].text
+    user["club"] = club
     brawlplayers[ctx.author.id] = user
     await ctx.send(
         "Вы успешно зарегистрировались на нашем сервере! Ваш никнейм в игре Brawl Stars: {}! Если это не так , то обратитесь за помощью к модераторам!".format(
@@ -253,6 +256,7 @@ async def brawlclub(ctx, member: discord.Member):
                 member.mention))
     else:
         await ctx.send("gg")
+
 
 
 token = os.environ.get('BOT_TOKEN')
