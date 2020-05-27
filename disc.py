@@ -8,10 +8,16 @@ import time
 import requests
 import json
 import datetime
+import psycopg2
 from bs4 import BeautifulSoup as BS
 
 bot = commands.Bot(command_prefix='$')
 client = discord.Client()
+
+DATABASE_URL = os.environ.get('DATABASE_URL')
+conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+
+cursor = conn.cursor()
 
 finance = {}
 
@@ -37,7 +43,7 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
-    global dt
+    global dt, cursor, conn
     newdt = int(time.time())
     newdt = newdt // 60
 
@@ -53,20 +59,31 @@ async def on_message(message):
             else:
                 minefinance[id] = minefinance[id] + newdt - dt
     dt = newdt
-
-    if profile.get(message.author.id) == None:
-        profile[message.author.id] = [0, 0]
-    else:
-        profile[message.author.id][0] += 1
-        if profile[message.author.id][0] >= 100:
-            profile[message.author.id][1] += 1
-            profile[message.author.id][0] = 0
-
-    if finance.get(message.author.id) == None:
-        finance[message.author.id] = 2
-    else:
-        finance[message.author.id] += 1
-
+    cursor.execute("SELECT * FROM users WHERE user_id = '{}'".format(message.author.id))
+    users = cursor.fetchall()
+    if len(users) == 0:
+        cursor.execute("INSERT INTO users (user_id,level,money,minemoney,points) VALUES ('{}',{},{},{},{});".format(
+            message.author.id, 0, 5, 0, 0))
+    conn.commit()
+    cursor.execute(
+        "SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}'".format(message.author.id))
+    money = cursor.fetchall()
+    money = int(money[0][2]) + 1
+    cursor.execute(
+        "SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}'".format(message.author.id))
+    points = cursor.fetchall()
+    points = int(points[0][4]) + 1
+    cursor.execute(
+        "SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}'".format(message.author.id))
+    level = cursor.fetchall()
+    level = level[0][1]
+    if points >= 100:
+        level += 1
+        points -= 100
+    cursor.execute("UPDATE users SET money = {} WHERE user_id = '{}';".format(money, message.author.id))
+    cursor.execute("UPDATE users SET points = {} WHERE user_id = '{}';".format(points, message.author.id))
+    cursor.execute("UPDATE users SET level = {} WHERE user_id = '{}';".format(level, message.author.id))
+    conn.commit()
     await bot.process_commands(message)
 
 
@@ -76,55 +93,75 @@ async def on_command_error(ctx, error):
         await ctx.send('Команда не найдена')
 
 
+@bot.event
+async def on_command(ctx):
+    global cursor, conn
+    cursor.execute("SELECT * FROM users WHERE user_id = '{}'".format(ctx.author.id))
+    users = cursor.fetchall()
+    if len(users) == 0:
+        cursor.execute("INSERT INTO users (user_id,level,money,minemoney,points) VALUES ('{}',{},{},{},{});".format(
+            ctx.author.id, 0, 5, 0, 0))
+        cursor.execute("SELECT * FROM users")
+    conn.commit()
+
+
 # ready
 @bot.command()
 async def stavka(ctx, arg: int):
-    if profile.get(ctx.author.id) == None:
-        profile[ctx.author.id] = [0, 0]
+    global cursor, jackpot, colors, conn
+    cursor.execute("SELECT * FROM users WHERE user_id = '{}';".format(ctx.author.id))
+    userfinance = cursor.fetchall()
     arg = int(arg)
-    if arg > finance[ctx.author.id] or arg <= 0:
+    if arg > userfinance[0][2] or arg <= 0:
         await ctx.send("❌Число введено неверно.")
     else:
         multi = random.randint(0, 20) / 10
         pot = random.randint(0, 100)
         finalresult = int(arg * multi)
-        finance[ctx.author.id] -= arg
-        global jackpot, colors
+        firstfinance = userfinance[0][2] - arg
+        cursor.execute("UPDATE users SET money = {} WHERE user_id = '{}';".format(firstfinance, ctx.author.id))
         jackpot += arg
         jackpot -= finalresult
         emb = discord.Embed(color=random.choice(colors))
         emb.title = ("Ставка: {}$\nМножитель: {}\nВыигрыш: {}$".format(arg, multi, finalresult))
         if pot == 5:
-            finance[ctx.author.id] += jackpot
+            jackpotfinance = jackpot + userfinance[0][2]
+            cursor.execute("UPDATE users SET money = {} WHERE user_id = '{}';".format(jackpotfinance, ctx.author.id))
             await ctx.send(
                 "{}, поздравляем!Вы забрали джекпот!!!Он составлял {} монет!!!".format(ctx.author.mention, jackpot))
             jackpot = 10000
         else:
-            finance[ctx.author.id] += finalresult
+            lastfinance = finalresult + firstfinance
+            cursor.execute("UPDATE users SET money = {} WHERE user_id = '{}';".format(lastfinance, ctx.author.id))
             await ctx.send(embed=emb)
+    conn.commit()
 
 
 # ready
 @bot.command()
 async def balans(ctx, member: discord.Member):
-    global colors
-    if finance.get(member.id) == None:
-        finance[member.id] = 2
+    global colors, cursor
     emb = discord.Embed(color=random.choice(colors))
-    emb.set_author(name="Баланс {} : {}$".format(member, finance[member.id]), icon_url=member.avatar_url)
+    cursor.execute("SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}';".format(member.id))
+    userfinance = cursor.fetchall()
+    emb.set_author(name="Баланс {} : {}$".format(member, userfinance[0][2]), icon_url=member.avatar_url)
     await ctx.send(embed=emb)
     member = member
 
 
 @bot.command()
 async def usercard(ctx, member: discord.Member):
-    global colors
-    if profile.get(member.id) == None:
-        profile[member.id] = [0, 0]
-    await ctx.send(
-        "{}, ваши очки: {}, уровень: {}".format(member.mention, profile[member.id][0],
-                                                profile[member.id][1]))
+    global colors, cursor, conn
+    emb = discord.Embed(color=random.choice(colors))
+    cursor.execute("SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}';".format(member.id))
+    usercardcomm = cursor.fetchall()
+    emb.set_thumbnail(url=member.avatar_url)
+    emb.title = "Профиль участника {}".format(member)
+    emb.add_field(name="Уровень", value=("{}".format(usercardcomm[0][1])))
+    emb.add_field(name="Очки", value=("{}".format(usercardcomm[0][4])))
+    await ctx.send(embed=emb)
     member = member
+    conn.commit()
 
 
 @bot.command()
@@ -209,7 +246,7 @@ async def miningvivod(ctx, arg: int):
     if arg > minefinance[ctx.author.id] or arg <= 0:
         await ctx.send("Число введено неверно.")
     else:
-        finance[ctx.author.id] += int(arg * 0,95)
+        finance[ctx.author.id] += int(arg * 0, 95)
         minefinance[ctx.author.id] -= arg
         await ctx.send("Вы успешно вывели {} монет".format(arg))
 
@@ -256,8 +293,6 @@ async def brawlclub(ctx, member: discord.Member):
                 member.mention))
     else:
         await ctx.send("gg")
-
-
 
 token = os.environ.get('BOT_TOKEN')
 bot.run(str(token))
