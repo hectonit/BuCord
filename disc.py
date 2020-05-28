@@ -11,8 +11,9 @@ import datetime
 import psycopg2
 from bs4 import BeautifulSoup as BS
 
-bot = commands.Bot(command_prefix='$')
+bot = commands.Bot(command_prefix='.')
 client = discord.Client()
+bot.remove_command("help")
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
 conn = psycopg2.connect(DATABASE_URL, sslmode='require')
@@ -293,6 +294,29 @@ async def brawlclub(ctx, member: discord.Member):
                 member.mention))
     else:
         await ctx.send("gg")
+
+
+@bot.command()
+async def help(ctx , arg=None):
+    global colors
+    emb = discord.Embed(color=random.choice(colors))
+    if arg == None:
+        emb.title = "Команды бота BuCord:"
+        emb.description = "<> - обязательный аргумент , [] - необязательный аргумент"
+        emb.add_field(name=".help [команда]", value="выводит это сообщение")
+        emb.add_field(name=".dollar", value="выводит курс доллара к рублю")
+        emb.add_field(name=".jackpot_info", value="выводит кол-во монет , которое составляет джекпот")
+        emb.add_field(name=".balans <участник сервера>", value="выводит баланс участника")
+        emb.add_field(name=".brawlclub <участник сервера>", value="выводит клуб участника")
+        emb.add_field(name=".brawltrophies <участник сервера>", value="выводит кубки участника")
+        emb.add_field(name=".give <учатсник сервера> <монеты>", value="добавляет участнику указанное кол-во монет(только для модераторов)")
+        emb.add_field(name=".mine_info <участник сервера>", value="выводит кол-во намайненых монет участника")
+        emb.add_field(name=".miningvivod <монеты>", value="выводит монеты с майнинга на баланс (комиссия 5%)")
+        emb.add_field(name=".registr <тег в Brawl Stars>", value="регистрирует вас на сервере")
+        emb.add_field(name=".stavka <монеты>", value="вы ставите монеты(принцип как в казино)")
+        emb.add_field(name=".top", value="выводит топ участников по монетам")
+        emb.add_field(name=".usercard <участник сервера>", value="выводит карточку участника")
+    await ctx.send(embed=emb)
 
 token = os.environ.get('BOT_TOKEN')
 bot.run(str(token))
