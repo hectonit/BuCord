@@ -57,7 +57,7 @@ async def on_message(message):
             ides.append(elem[0])
         for id in ides:
             cursor.execute(
-                "SELECT user_id,level,money,minemoney,points,brawlstatus FROM users WHERE user_id = '{}';".format(message.author.id))
+                "SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}';".format(message.author.id))
             minemoney = cursor.fetchall()
             minemoney = int(minemoney[0][3])
             minemoney = minemoney + newdt - dt
