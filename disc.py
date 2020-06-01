@@ -25,8 +25,6 @@ jackpot = 10000
 dt = int(time.time())
 dt = dt // 60
 
-brawlplayers = {}
-
 colors = [0xFF0000, 0x39d0d6, 0xff6699, 0x17f90f, 0x0f13f9, 0xdff90f, 0xff8100, 0x740001, 0x330066]
 
 
@@ -57,7 +55,8 @@ async def on_message(message):
             ides.append(elem[0])
         for id in ides:
             cursor.execute(
-                "SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}';".format(message.author.id))
+                "SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}';".format(
+                    message.author.id))
             minemoney = cursor.fetchall()
             minemoney = int(minemoney[0][3])
             minemoney = minemoney + newdt - dt
@@ -149,8 +148,10 @@ async def balans(ctx, member: discord.Member):
 
 
 @bot.command()
-async def usercard(ctx, member: discord.Member):
+async def usercard(ctx, member: discord.Member = None):
     global colors, cursor, conn
+    if member == None:
+        member = ctx.author
     emb = discord.Embed(color=random.choice(colors))
     cursor.execute("SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}';".format(member.id))
     usercardcomm = cursor.fetchall()
@@ -223,8 +224,10 @@ async def jackpot_info(ctx):
 
 
 @bot.command()
-async def mine_info(ctx, member: discord.Member):
+async def mine_info(ctx, member: discord.Member = None):
     global dt
+    if member == None:
+        member = ctx.author
     newdt = int(time.time())
     newdt = newdt // 60
     cursor.execute("SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}';".format(member.id))
@@ -251,12 +254,13 @@ async def miningvivod(ctx, arg):
     if arg > minefinance:
         await ctx.send("Число введено неверно.")
     else:
+        anoarg = arg
         arg = int(arg * 0.95)
         finance = finance + arg
         minefinance = minefinance - arg
         cursor.execute("UPDATE users SET minemoney = {} WHERE user_id = '{}';".format(minefinance, ctx.author.id))
         cursor.execute("UPDATE users SET money = {} WHERE user_id = '{}';".format(finance, ctx.author.id))
-        await ctx.send("Вы успешно вывели {} монет".format(arg))
+        await ctx.send("Вы успешно вывели {} монет".format(anoarg))
 
 
 @bot.command()
@@ -269,6 +273,7 @@ async def dollar(ctx):
 
 @bot.command()
 async def registr(ctx, usertag):
+    global cursor, conn
     r = requests.get("https://www.starlist.pro/stats/profile/{}".format(usertag))
     html = BS(r.content, "html.parser")
     user = {}
@@ -281,10 +286,14 @@ async def registr(ctx, usertag):
     await ctx.send(
         "Вы успешно зарегистрировались на нашем сервере! Ваш никнейм в игре Brawl Stars: {}! Если это не так , то обратитесь за помощью к модераторам!".format(
             user["name"]))
+    cursor.execute("UPDATE users SET brawlstatus = TRUE WHERE user_id = '{}'".format(ctx.author.id))
+    conn.commit()
 
 
 @bot.command()
-async def brawltrophies(ctx, member: discord.Member):
+async def brawltrophies(ctx, member: discord.Member = None):
+    if member == None:
+        member = ctx.author
     if brawlplayers.get(member.id) == None:
         await ctx.send(
             "Пользователь {} еще не зарегистрировался! Чтобы зарегистрироваться прейдите в канал 'регистрация'!".format(
@@ -294,7 +303,9 @@ async def brawltrophies(ctx, member: discord.Member):
 
 
 @bot.command()
-async def brawlclub(ctx, member: discord.Member):
+async def brawlclub(ctx, member: discord.Member = None):
+    if member == None:
+        member = ctx.author
     if brawlplayers.get(member.id) == None:
         await ctx.send(
             "Пользователь {} еще не зарегистрировался! Чтобы зарегистрироваться прейдите в канал 'регистрация'!".format(
@@ -304,7 +315,7 @@ async def brawlclub(ctx, member: discord.Member):
 
 
 @bot.command()
-async def help(ctx , arg=None):
+async def help(ctx, arg=None):
     global colors
     emb = discord.Embed(color=random.choice(colors))
     if arg == None:
@@ -313,16 +324,17 @@ async def help(ctx , arg=None):
         emb.add_field(name=".help [команда]", value="выводит это сообщение")
         emb.add_field(name=".dollar", value="выводит курс доллара к рублю")
         emb.add_field(name=".jackpot_info", value="выводит кол-во монет , которое составляет джекпот")
-        emb.add_field(name=".balans <участник сервера>", value="выводит баланс участника")
-        emb.add_field(name=".brawlclub <участник сервера>", value="выводит клуб участника")
-        emb.add_field(name=".brawltrophies <участник сервера>", value="выводит кубки участника")
-        emb.add_field(name=".give <учатсник сервера> <монеты>", value="добавляет участнику указанное кол-во монет(только для модераторов)")
-        emb.add_field(name=".mine_info <участник сервера>", value="выводит кол-во намайненых монет участника")
+        emb.add_field(name=".balans [участник сервера]", value="выводит баланс участника")
+        emb.add_field(name=".brawlclub [участник сервера]", value="выводит клуб участника")
+        emb.add_field(name=".brawltrophies [участник сервера]", value="выводит кубки участника")
+        emb.add_field(name=".give <учатсник сервера> <монеты>",
+                      value="добавляет участнику указанное кол-во монет(только для модераторов)")
+        emb.add_field(name=".mine_info [участник сервера]", value="выводит кол-во намайненых монет участника")
         emb.add_field(name=".miningvivod <монеты>", value="выводит монеты с майнинга на баланс (комиссия 5%)")
         emb.add_field(name=".registr <тег в Brawl Stars>", value="регистрирует вас на сервере")
         emb.add_field(name=".stavka <монеты>", value="вы ставите монеты(принцип как в казино)")
         emb.add_field(name=".top", value="выводит топ участников по монетам")
-        emb.add_field(name=".usercard <участник сервера>", value="выводит карточку участника")
+        emb.add_field(name=".usercard [участник сервера]", value="выводит карточку участника")
     await ctx.send(embed=emb)
 
 token = os.environ.get('BOT_TOKEN')
