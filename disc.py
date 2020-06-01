@@ -9,6 +9,7 @@ import requests
 import json
 import datetime
 import psycopg2
+import nekos
 from bs4 import BeautifulSoup as BS
 
 bot = commands.Bot(command_prefix='.')
@@ -24,6 +25,8 @@ jackpot = 10000
 
 dt = int(time.time())
 dt = dt // 60
+
+brawlplayers = {}
 
 colors = [0xFF0000, 0x39d0d6, 0xff6699, 0x17f90f, 0x0f13f9, 0xdff90f, 0xff8100, 0x740001, 0x330066]
 
@@ -336,6 +339,17 @@ async def help(ctx, arg=None):
         emb.add_field(name=".top", value="выводит топ участников по монетам")
         emb.add_field(name=".usercard [участник сервера]", value="выводит карточку участника")
     await ctx.send(embed=emb)
+
+
+@bot.command()
+async def nswf(ctx, arg):
+    if ctx.channel.is_nsfw():
+        emb = discord.Embed()
+        url = nekos.img(target=arg)
+        emb.set_image(url=url)
+        await (await ctx.send(embed=emb)).delete(delay=10)
+    else:
+        await ctx.send("Это не NSWF канал!")
 
 token = os.environ.get('BOT_TOKEN')
 bot.run(str(token))
