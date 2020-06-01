@@ -16,7 +16,7 @@ client = discord.Client()
 bot.remove_command("help")
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
-conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+conn = psycopg2.connect(DATABASE_URL)
 
 cursor = conn.cursor()
 
