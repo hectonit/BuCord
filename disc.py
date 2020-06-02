@@ -40,6 +40,8 @@ async def on_ready():
 @bot.event
 async def on_message(message):
     global dt, cursor, conn
+    DATABASE_URL = os.environ.get('DATABASE_URL')
+    conn = psycopg2.connect(DATABASE_URL)
     newdt = int(time.time())
     newdt = newdt // 60
     if message.author.id == 706401122721595444:
