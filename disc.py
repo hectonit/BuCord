@@ -350,6 +350,7 @@ async def nswf(ctx, arg):
     if ctx.channel.is_nsfw():
         emb = discord.Embed()
         url = "https://pixabay.com/api/?key=16846925-0ecded025c1045855fb11c1bc&q=nude+{}".format(arg)
+        url = url.json()
         url = url["hits"]
         url = random.choice(url)
         url = url["imageURL"]
