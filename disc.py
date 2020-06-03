@@ -9,7 +9,6 @@ import requests
 import json
 import datetime
 import psycopg2
-import nekos
 from bs4 import BeautifulSoup as BS
 
 bot = commands.Bot(command_prefix='.')
@@ -17,7 +16,8 @@ client = discord.Client()
 bot.remove_command("help")
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
-conn = psycopg2.connect(DATABASE_URL)
+DATABASE_URL = "postgres://tkjbuhgdrjljqj:cdd4da6cbb0b0994243e57c9d60ea8e71613ec4c88e6b5f846c7f87a9dfe7288@ec2-54-217-236-206.eu-west-1.compute.amazonaws.com:5432/dd7c4puult6ugb"
+conn = psycopg2.connect(DATABASE_URL, sslmode="require")
 
 cursor = conn.cursor()
 
@@ -40,8 +40,6 @@ async def on_ready():
 @bot.event
 async def on_message(message):
     global dt, cursor, conn
-    DATABASE_URL = os.environ.get('DATABASE_URL')
-    conn = psycopg2.connect(DATABASE_URL)
     newdt = int(time.time())
     newdt = newdt // 60
     if message.author.id == 706401122721595444:
@@ -49,8 +47,8 @@ async def on_message(message):
     cursor.execute("SELECT * FROM users WHERE user_id = '{}';".format(message.author.id))
     users = cursor.fetchall()
     if len(users) == 0:
-        cursor.execute("INSERT INTO users (user_id,level,money,minemoney,points) VALUES ('{}',{},{},{},{});".format(
-            message.author.id, 0, 5, 0, 0))
+        cursor.execute("INSERT INTO users (user_id,level,money,minemoney,points,guild_id) VALUES ('{}',{},{},{},{},'{}');".format(
+            message.author.id, 0, 5, 0, 0, message.guild.id))
     conn.commit()
     if newdt > dt:
         cursor.execute("SELECT * FROM users;")
@@ -106,6 +104,20 @@ async def on_command(ctx):
             ctx.author.id, 0, 5, 0, 0))
         cursor.execute("SELECT * FROM users;")
     conn.commit()
+
+
+@bot.event
+async def on_member_join(member):
+    guild = member.guild
+    channel = guild.system_channel
+    await channel.send("Здарова , {}".format(member.mention))
+
+
+@bot.event
+async def on_member_remove(member):
+    guild = member.guild
+    channel = guild.system_channel
+    await channel.send("Прощай , {}".format(member.mention))
 
 
 # ready
@@ -183,7 +195,6 @@ async def top(ctx):
     cursor.execute("SELECT * FROM users ORDER BY money;")
     topp = cursor.fetchall()
     topp.reverse()
-    print(topp)
     counter = 0
     for elem in topp:
         biggest = elem[2]
@@ -193,7 +204,6 @@ async def top(ctx):
             torr.pop()
             continue
         counter += 1
-    print(torr)
     ind1 = ("Первое место - {} - {}".format(bot.get_user(torr[0][1]), torr[0][0]))
     if len(torr) >= 2:
         ind2 = ("Второе место - {} - {}".format(bot.get_user(torr[1][1]), torr[1][0]))
@@ -343,27 +353,6 @@ async def help(ctx, arg=None):
         emb.add_field(name=".top", value="выводит топ участников по монетам")
         emb.add_field(name=".usercard [участник сервера]", value="выводит карточку участника")
     await ctx.send(embed=emb)
-
-
-@bot.command()
-async def nswf(ctx, arg):
-    if ctx.channel.is_nsfw():
-        emb = discord.Embed()
-        url = "https://pixabay.com/api/?key=16846925-0ecded025c1045855fb11c1bc&q=nude+{}".format(arg)
-        url = url.json()
-        url = url["hits"]
-        url = random.choice(url)
-        url = url["imageURL"]
-        emb.set_image(url=url)
-        await (await ctx.send(embed=emb)).delete(delay=10)
-    else:
-        await ctx.send("Это не NSWF канал!")
-
-
-@bot.command()
-async def close(ctx):
-    global conn
-    conn.close()
 
 token = os.environ.get('BOT_TOKEN')
 bot.run(str(token))
