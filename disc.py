@@ -44,11 +44,13 @@ async def on_message(message):
     newdt = newdt // 60
     if message.author.id == 706401122721595444:
         return
-    cursor.execute("SELECT * FROM users WHERE user_id = '{}';".format(message.author.id))
+    cursor.execute(
+        "SELECT * FROM users WHERE user_id = '{}' AND guild_id = '{}';".format(message.author.id, message.guild.id))
     users = cursor.fetchall()
     if len(users) == 0:
-        cursor.execute("INSERT INTO users (user_id,level,money,minemoney,points,guild_id) VALUES ('{}',{},{},{},{},'{}');".format(
-            message.author.id, 0, 5, 0, 0, message.guild.id))
+        cursor.execute(
+            "INSERT INTO users (user_id,level,money,minemoney,points,guild_id) VALUES ('{}',{},{},{},{},'{}');".format(
+                message.author.id, 0, 5, 0, 0, message.guild.id))
     conn.commit()
     if newdt > dt:
         cursor.execute("SELECT * FROM users;")
@@ -58,32 +60,46 @@ async def on_message(message):
             ides.append(elem[0])
         for id in ides:
             cursor.execute(
-                "SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}';".format(
-                    message.author.id))
+                "SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}' AND guild_id = '{}';".format(
+                    message.author.id, message.guild.id))
             minemoney = cursor.fetchall()
             minemoney = int(minemoney[0][3])
             minemoney = minemoney + newdt - dt
-            cursor.execute("UPDATE users SET minemoney = {} WHERE user_id = '{}';".format(minemoney, id))
+            cursor.execute(
+                "UPDATE users SET minemoney = {} WHERE user_id = '{}' AND guild_id = '{}';".format(minemoney, id,
+                                                                                                   message.guild.id))
             conn.commit()
         dt = newdt
     cursor.execute(
-        "SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}';".format(message.author.id))
+        "SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}' AND guild_id = '{}';".format(
+            message.author.id, message.guild.id))
     money = cursor.fetchall()
     money = int(money[0][2]) + 1
     cursor.execute(
-        "SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}';".format(message.author.id))
+        "SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}' AND guild_id = '{}';".format(
+            message.author.id, message.guild.id))
     points = cursor.fetchall()
     points = int(points[0][4]) + 1
     cursor.execute(
-        "SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}';".format(message.author.id))
+        "SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}' AND guild_id = '{}';".format(
+            message.author.id, message.guild.id))
     level = cursor.fetchall()
     level = level[0][1]
     if points >= 100:
         level += 1
         points -= 100
-    cursor.execute("UPDATE users SET money = {} WHERE user_id = '{}';".format(money, message.author.id))
-    cursor.execute("UPDATE users SET points = {} WHERE user_id = '{}';".format(points, message.author.id))
-    cursor.execute("UPDATE users SET level = {} WHERE user_id = '{}';".format(level, message.author.id))
+    cursor.execute(
+        "UPDATE users SET money = {} WHERE user_id = '{}' AND guild_id = '{}';".format(money, message.author.id,
+                                                                                       message.guild.id))
+    cursor.execute(
+        "UPDATE users SET points = {} WHERE user_id = '{}' AND guild_id = '{}';".format(points, message.author.id,
+                                                                                        message.guild.id))
+    cursor.execute(
+        "UPDATE users SET level = {} WHERE user_id = '{}' AND guild_id = '{}';".format(level, message.author.id,
+                                                                                       message.guild.id))
+    cursor.execute(
+        "UPDATE users SET guild_id = {} WHERE user_id = '{}' AND guild_id = '{}';".format(level, message.guild.id,
+                                                                                          message.guild.id))
     conn.commit()
     await bot.process_commands(message)
 
@@ -95,36 +111,26 @@ async def on_command_error(ctx, error):
 
 
 @bot.event
-async def on_command(ctx):
-    global cursor, conn
-    cursor.execute("SELECT * FROM users WHERE user_id = '{}';".format(ctx.author.id))
-    users = cursor.fetchall()
-    if len(users) == 0:
-        cursor.execute("INSERT INTO users (user_id,level,money,minemoney,points) VALUES ('{}',{},{},{},{});".format(
-            ctx.author.id, 0, 5, 0, 0))
-        cursor.execute("SELECT * FROM users;")
-    conn.commit()
-
-
-@bot.event
 async def on_member_join(member):
     guild = member.guild
     channel = guild.system_channel
     await channel.send("Здарова , {}".format(member.mention))
 
 
+
 @bot.event
 async def on_member_remove(member):
     guild = member.guild
     channel = guild.system_channel
-    await channel.send("Прощай , {}".format(member.mention))
+    await channel.send("Прощай , {}".format(member))
 
 
 # ready
 @bot.command()
 async def stavka(ctx, arg: int):
     global cursor, jackpot, colors, conn
-    cursor.execute("SELECT * FROM users WHERE user_id = '{}';".format(ctx.author.id))
+    cursor.execute(
+        "SELECT * FROM users WHERE user_id = '{}' AND guild_id = '{}';".format(ctx.author.id, ctx.guild.id))
     userfinance = cursor.fetchall()
     arg = int(arg)
     if arg > userfinance[0][2] or arg <= 0:
@@ -134,20 +140,20 @@ async def stavka(ctx, arg: int):
         pot = random.randint(0, 100)
         finalresult = int(arg * multi)
         firstfinance = userfinance[0][2] - arg
-        cursor.execute("UPDATE users SET money = {} WHERE user_id = '{}';".format(firstfinance, ctx.author.id))
+        cursor.execute("UPDATE users SET money = {} WHERE user_id = '{}' AND guild_id = '{}';".format(firstfinance, ctx.author.id, ctx.guild.id))
         jackpot += arg
         jackpot -= finalresult
         emb = discord.Embed(color=random.choice(colors))
         emb.title = ("Ставка: {}$\nМножитель: {}\nВыигрыш: {}$".format(arg, multi, finalresult))
         if pot == 5:
             jackpotfinance = jackpot + userfinance[0][2]
-            cursor.execute("UPDATE users SET money = {} WHERE user_id = '{}';".format(jackpotfinance, ctx.author.id))
+            cursor.execute("UPDATE users SET money = {} WHERE user_id = '{}' AND guild_id = '{}';".format(jackpotfinance, ctx.author.id, ctx.guild.id))
             await ctx.send(
                 "{}, поздравляем!Вы забрали джекпот!!!Он составлял {} монет!!!".format(ctx.author.mention, jackpot))
             jackpot = 10000
         else:
             lastfinance = finalresult + firstfinance
-            cursor.execute("UPDATE users SET money = {} WHERE user_id = '{}';".format(lastfinance, ctx.author.id))
+            cursor.execute("UPDATE users SET money = {} WHERE user_id = '{}' AND guild_id = '{}';".format(lastfinance, ctx.author.id, ctx.guild.id))
             await ctx.send(embed=emb)
     conn.commit()
 
@@ -159,7 +165,7 @@ async def balans(ctx, member: discord.Member = None):
     if member == None:
         member = ctx.author
     emb = discord.Embed(color=random.choice(colors))
-    cursor.execute("SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}';".format(member.id))
+    cursor.execute("SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}' AND guild_id = '{}';".format(member.id, ctx.guild.id))
     userfinance = cursor.fetchall()
     emb.set_author(name="Баланс {} : {}$".format(member, userfinance[0][2]), icon_url=member.avatar_url)
     await ctx.send(embed=emb)
@@ -172,7 +178,9 @@ async def usercard(ctx, member: discord.Member = None):
     if member == None:
         member = ctx.author
     emb = discord.Embed(color=random.choice(colors))
-    cursor.execute("SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}';".format(member.id))
+    cursor.execute(
+        "SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}' AND guild_id = '{}';".format(
+            ctx.author.id, ctx.guild.id))
     usercardcomm = cursor.fetchall()
     emb.set_thumbnail(url=member.avatar_url)
     emb.title = "Профиль участника {}".format(member)
@@ -192,7 +200,7 @@ async def top(ctx):
     ind3 = "Нет информации"
     ind4 = "Нет информации"
     ind5 = "Нет информации"
-    cursor.execute("SELECT * FROM users ORDER BY money;")
+    cursor.execute("SELECT * FROM users WHERE guild_id = '{}' ORDER BY money;".format(ctx.guild.id))
     topp = cursor.fetchall()
     topp.reverse()
     counter = 0
@@ -247,7 +255,7 @@ async def mine_info(ctx, member: discord.Member = None):
         member = ctx.author
     newdt = int(time.time())
     newdt = newdt // 60
-    cursor.execute("SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}';".format(member.id))
+    cursor.execute("SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}' AND guild_id = '{}';".format(member.id, ctx.guild.id))
     minefinance = cursor.fetchall()
     minefinance = minefinance[0][3] + newdt - dt
     dt = newdt
@@ -258,16 +266,12 @@ async def mine_info(ctx, member: discord.Member = None):
 async def miningvivod(ctx, arg):
     global conn, cursor
     arg = int(arg)
-    cursor.execute("SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}';".format(ctx.author.id))
-    print(arg)
+    cursor.execute("SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}' AND guild_id = '{}';".format(ctx.author.id, ctx.guild.id))
     minefinance = cursor.fetchall()
     minefinance = minefinance[0][3]
-    print(minefinance)
-    cursor.execute("SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}';".format(ctx.author.id))
+    cursor.execute("SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}' AND guild_id = '{}';".format(ctx.author.id, ctx.guild.id))
     finance = cursor.fetchall()
     finance = finance[0][2]
-    print(finance)
-    print(minefinance)
     if arg > minefinance:
         await ctx.send("Число введено неверно.")
     else:
@@ -275,8 +279,8 @@ async def miningvivod(ctx, arg):
         arg = int(arg * 0.95)
         finance = finance + arg
         minefinance = minefinance - arg
-        cursor.execute("UPDATE users SET minemoney = {} WHERE user_id = '{}';".format(minefinance, ctx.author.id))
-        cursor.execute("UPDATE users SET money = {} WHERE user_id = '{}';".format(finance, ctx.author.id))
+        cursor.execute("UPDATE users SET minemoney = {} WHERE user_id = '{}' AND guild_id = '{}';".format(minefinance, ctx.author.id, ctx.guild.id))
+        cursor.execute("UPDATE users SET money = {} WHERE user_id = '{}' AND guild_id = '{}';".format(finance, ctx.author.id, ctx.guild.id))
         await ctx.send("Вы успешно вывели {} монет".format(anoarg))
 
 
@@ -293,22 +297,29 @@ async def registr(ctx, usertag):
     global cursor, conn
     r = requests.get("https://www.starlist.pro/stats/profile/{}".format(usertag))
     html = BS(r.content, "html.parser")
-    user = {}
-    club = {}
-    club["name"] = (html.select(".link"))[3].text
-    user["name"] = (html.select(".display-4"))[0].text
-    user["trophies"] = (html.select(".shadow-normal"))[22].text
-    user["club"] = club
-    brawlplayers[ctx.author.id] = user
+    clubname = (html.select(".link"))[3].text
+    username = (html.select(".display-4"))[0].text
+    usertrophies = (html.select(".shadow-normal"))[24].text
+    r = BS(r.content, "html.parser").find_all('td', class_="text-left")
+    r = r[3]
+    for i in r.find_all('a', href=True):
+        newr = i["href"]
+        clubtag = (i["href"].split("/"))[3]
+    usertrophiesarr = usertrophies.split(",")
+    usertrophies = usertrophiesarr[0] + usertrophiesarr[1]
+    usertrophies = int(usertrophies)
+    cursor.execute(
+        "INSERT INTO brawluser (user_id,guild_id,trophies,brawltag,clubtag) VALUES ('{}','{}',{},'{}','{}')".format(
+            ctx.author.id, ctx.guild.id, usertrophies, usertag, clubtag))
     await ctx.send(
         "Вы успешно зарегистрировались на нашем сервере! Ваш никнейм в игре Brawl Stars: {}! Если это не так , то обратитесь за помощью к модераторам!".format(
-            user["name"]))
-    cursor.execute("UPDATE users SET brawlstatus = TRUE WHERE user_id = '{}'".format(ctx.author.id))
+            username))
+    cursor.execute("UPDATE users SET brawlstatus = TRUE WHERE user_id = '{}' AND guild_id = '{}'".format(ctx.author.id, ctx.guild.id))
     conn.commit()
 
 
 @bot.command()
-async def brawltrophies(ctx, member: discord.Member = None):
+async def brawlcard(ctx, member: discord.Member = None):
     if member == None:
         member = ctx.author
     if brawlplayers.get(member.id) == None:
