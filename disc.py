@@ -11,7 +11,7 @@ import datetime
 import psycopg2
 from bs4 import BeautifulSoup as BS
 
-bot = commands.Bot(command_prefix='.bu ')
+bot = commands.Bot(command_prefix='.')
 client = discord.Client()
 bot.remove_command("help")
 
@@ -35,6 +35,8 @@ async def on_ready():
     print("Bot logged as {}".format(bot.user))
     await bot.change_presence(activity=discord.Game(".help"))
     for guild in bot.guilds:
+        if len(guild.members) >= 1000:
+            await guild.text_channels[0].send("Ваш сервер слишком велик для нашего бота для того , чтобы он работал надо задонатить!!!")
         for member in guild.members:
             if member.id == 706401122721595444:
                 return
@@ -127,7 +129,7 @@ async def on_member_join(member):
 async def on_member_remove(member):
     guild = member.guild
     channel = guild.system_channel
-    cursor.execute("DELETE FROM users WHERE user_id = {} AND guild_id = {};".format(member.id,guild.id))
+    cursor.execute("DELETE FROM users WHERE user_id = '{}' AND guild_id = '{}';".format(member.id,guild.id))
     await channel.send("Прощай , {}".format(member))
 
 
@@ -328,7 +330,7 @@ async def help(ctx, arg=None):
     global colors
     emb = discord.Embed(color=random.choice(colors))
     if arg == None:
-        emb.title = "Команды бота BuCord*:"
+        emb.title = "Команды бота BuCord:"
         emb.description = "<> - обязательный аргумент , [] - необязательный аргумент"
         emb.add_field(name=".help [команда]", value="выводит это сообщение")
         emb.add_field(name=".dollar", value="выводит курс доллара к рублю")
@@ -342,6 +344,7 @@ async def help(ctx, arg=None):
         emb.add_field(name=".top", value="выводит топ участников по монетам")
         emb.add_field(name=".usercard [участник сервера]", value="выводит карточку участника")
     await ctx.send(embed=emb)
+
 
 token = os.environ.get('BOT_TOKEN')
 bot.run(str(token))
