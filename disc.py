@@ -11,7 +11,7 @@ import datetime
 import psycopg2
 from bs4 import BeautifulSoup as BS
 
-bot = commands.Bot(command_prefix='.')
+bot = commands.Bot(command_prefix='.bu ')
 client = discord.Client()
 bot.remove_command("help")
 
@@ -33,7 +33,19 @@ colors = [0xFF0000, 0x39d0d6, 0xff6699, 0x17f90f, 0x0f13f9, 0xdff90f, 0xff8100, 
 @bot.event
 async def on_ready():
     print("Bot logged as {}".format(bot.user))
-    await bot.change_presence(activity=discord.Game("Слежку за сервером BU TEAM"))
+    await bot.change_presence(activity=discord.Game(".help"))
+    for guild in bot.guilds:
+        for member in guild.members:
+            if member.id == 706401122721595444:
+                return
+            cursor.execute(
+                "SELECT * FROM users WHERE user_id = '{}' AND guild_id = '{}';".format(member.id, guild.id))
+            users = cursor.fetchall()
+            if len(users) == 0:
+                cursor.execute(
+                    "INSERT INTO users (user_id,level,money,minemoney,points,guild_id) VALUES ('{}',{},{},{},{},'{}');".format(
+                        member.id, 0, 5, 0, 0, guild.id))
+            conn.commit()
 
 
 @bot.event
@@ -43,14 +55,6 @@ async def on_message(message):
     newdt = newdt // 60
     if message.author.id == 706401122721595444:
         return
-    cursor.execute(
-        "SELECT * FROM users WHERE user_id = '{}' AND guild_id = '{}';".format(message.author.id, message.guild.id))
-    users = cursor.fetchall()
-    if len(users) == 0:
-        cursor.execute(
-            "INSERT INTO users (user_id,level,money,minemoney,points,guild_id) VALUES ('{}',{},{},{},{},'{}');".format(
-                message.author.id, 0, 5, 0, 0, message.guild.id))
-    conn.commit()
     if newdt > dt:
         cursor.execute("SELECT * FROM users;")
         otherides = cursor.fetchall()
@@ -113,6 +117,9 @@ async def on_command_error(ctx, error):
 async def on_member_join(member):
     guild = member.guild
     channel = guild.system_channel
+    cursor.execute(
+        "INSERT INTO users (user_id,level,money,minemoney,points,guild_id) VALUES ('{}',{},{},{},{},'{}');".format(
+            member.id, 0, 5, 0, 0, guild.id))
     await channel.send("Здарова , {}".format(member.mention))
 
 
@@ -120,7 +127,14 @@ async def on_member_join(member):
 async def on_member_remove(member):
     guild = member.guild
     channel = guild.system_channel
+    cursor.execute("DELETE FROM users WHERE user_id = {} AND guild_id = {};".format(member.id,guild.id))
     await channel.send("Прощай , {}".format(member))
+
+
+@bot.event
+async def on_guild_join(guild):
+    channel = guild.system_channel
+    await channel.send("Пожалуйста настройте бота!!!")
 
 
 # ready
@@ -138,20 +152,27 @@ async def stavka(ctx, arg: int):
         pot = random.randint(0, 100)
         finalresult = int(arg * multi)
         firstfinance = userfinance[0][2] - arg
-        cursor.execute("UPDATE users SET money = {} WHERE user_id = '{}' AND guild_id = '{}';".format(firstfinance, ctx.author.id, ctx.guild.id))
+        cursor.execute(
+            "UPDATE users SET money = {} WHERE user_id = '{}' AND guild_id = '{}';".format(firstfinance, ctx.author.id,
+                                                                                           ctx.guild.id))
         jackpot += arg
         jackpot -= finalresult
         emb = discord.Embed(color=random.choice(colors))
         emb.title = ("Ставка: {}$\nМножитель: {}\nВыигрыш: {}$".format(arg, multi, finalresult))
         if pot == 5:
             jackpotfinance = jackpot + userfinance[0][2]
-            cursor.execute("UPDATE users SET money = {} WHERE user_id = '{}' AND guild_id = '{}';".format(jackpotfinance, ctx.author.id, ctx.guild.id))
+            cursor.execute(
+                "UPDATE users SET money = {} WHERE user_id = '{}' AND guild_id = '{}';".format(jackpotfinance,
+                                                                                               ctx.author.id,
+                                                                                               ctx.guild.id))
             await ctx.send(
                 "{}, поздравляем!Вы забрали джекпот!!!Он составлял {} монет!!!".format(ctx.author.mention, jackpot))
             jackpot = 10000
         else:
             lastfinance = finalresult + firstfinance
-            cursor.execute("UPDATE users SET money = {} WHERE user_id = '{}' AND guild_id = '{}';".format(lastfinance, ctx.author.id, ctx.guild.id))
+            cursor.execute("UPDATE users SET money = {} WHERE user_id = '{}' AND guild_id = '{}';".format(lastfinance,
+                                                                                                          ctx.author.id,
+                                                                                                          ctx.guild.id))
             await ctx.send(embed=emb)
     conn.commit()
 
@@ -163,7 +184,9 @@ async def balans(ctx, member: discord.Member = None):
     if member == None:
         member = ctx.author
     emb = discord.Embed(color=random.choice(colors))
-    cursor.execute("SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}' AND guild_id = '{}';".format(member.id, ctx.guild.id))
+    cursor.execute(
+        "SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}' AND guild_id = '{}';".format(
+            member.id, ctx.guild.id))
     userfinance = cursor.fetchall()
     emb.set_author(name="Баланс {} : {}$".format(member, userfinance[0][2]), icon_url=member.avatar_url)
     await ctx.send(embed=emb)
@@ -222,8 +245,9 @@ async def top(ctx):
     await ctx.send("{}\n{}\n{}\n{}\n{}".format(ind1, ind2, ind3, ind4, ind5))
 
 
-@bot.command(pass_context=True)
+@bot.command()
 async def give(ctx, member: discord.Member, arg):
+    global cursor, conn
     rolarr = []
     for role in ctx.author.roles:
         rolarr.append(role.id)
@@ -231,12 +255,10 @@ async def give(ctx, member: discord.Member, arg):
     if moder not in rolarr:
         await ctx.channel.send("У вас недостаточно прав")
         return
-    if finance.get(member.id) == None:
-        finance[member.id] = int(arg)
-        await ctx.channel.send("{} вам выдано {} монет".format(member.mention, arg))
-        return
     arg = int(arg)
-    finance[member.id] += arg
+    cursor.execute("UPDATE users SET money = {} WHERE user_id = '{}' AND guild_id = '{}';".format(lastfinance,
+                                                                                                  ctx.author.id,
+                                                                                                  ctx.guild.id))
     await ctx.channel.send("{} вам выдано {} монет".format(member.mention, arg))
     member = member
 
@@ -253,7 +275,9 @@ async def mine_info(ctx, member: discord.Member = None):
         member = ctx.author
     newdt = int(time.time())
     newdt = newdt // 60
-    cursor.execute("SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}' AND guild_id = '{}';".format(member.id, ctx.guild.id))
+    cursor.execute(
+        "SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}' AND guild_id = '{}';".format(
+            member.id, ctx.guild.id))
     minefinance = cursor.fetchall()
     minefinance = minefinance[0][3] + newdt - dt
     dt = newdt
@@ -264,10 +288,14 @@ async def mine_info(ctx, member: discord.Member = None):
 async def miningvivod(ctx, arg):
     global conn, cursor
     arg = int(arg)
-    cursor.execute("SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}' AND guild_id = '{}';".format(ctx.author.id, ctx.guild.id))
+    cursor.execute(
+        "SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}' AND guild_id = '{}';".format(
+            ctx.author.id, ctx.guild.id))
     minefinance = cursor.fetchall()
     minefinance = minefinance[0][3]
-    cursor.execute("SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}' AND guild_id = '{}';".format(ctx.author.id, ctx.guild.id))
+    cursor.execute(
+        "SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}' AND guild_id = '{}';".format(
+            ctx.author.id, ctx.guild.id))
     finance = cursor.fetchall()
     finance = finance[0][2]
     if arg > minefinance:
@@ -277,8 +305,12 @@ async def miningvivod(ctx, arg):
         arg = int(arg * 0.95)
         finance = finance + arg
         minefinance = minefinance - arg
-        cursor.execute("UPDATE users SET minemoney = {} WHERE user_id = '{}' AND guild_id = '{}';".format(minefinance, ctx.author.id, ctx.guild.id))
-        cursor.execute("UPDATE users SET money = {} WHERE user_id = '{}' AND guild_id = '{}';".format(finance, ctx.author.id, ctx.guild.id))
+        cursor.execute("UPDATE users SET minemoney = {} WHERE user_id = '{}' AND guild_id = '{}';".format(minefinance,
+                                                                                                          ctx.author.id,
+                                                                                                          ctx.guild.id))
+        cursor.execute(
+            "UPDATE users SET money = {} WHERE user_id = '{}' AND guild_id = '{}';".format(finance, ctx.author.id,
+                                                                                           ctx.guild.id))
         await ctx.send("Вы успешно вывели {} монет".format(anoarg))
 
 
@@ -290,74 +322,22 @@ async def dollar(ctx):
     await ctx.send("Курс доллара: {} рублей".format(course))
 
 
-@bot.command()
-async def registr(ctx, usertag):
-    global cursor, conn
-    r = requests.get("https://www.starlist.pro/stats/profile/{}".format(usertag))
-    html = BS(r.content, "html.parser")
-    clubname = (html.select(".link"))[3].text
-    username = (html.select(".display-4"))[0].text
-    usertrophies = (html.select(".shadow-normal"))[24].text
-    r = BS(r.content, "html.parser").find_all('td', class_="text-left")
-    r = r[3]
-    for i in r.find_all('a', href=True):
-        newr = i["href"]
-        clubtag = (i["href"].split("/"))[3]
-    usertrophiesarr = usertrophies.split(",")
-    usertrophies = usertrophiesarr[0] + usertrophiesarr[1]
-    usertrophies = int(usertrophies)
-    cursor.execute(
-        "INSERT INTO brawluser (user_id,guild_id,trophies,brawltag,clubtag) VALUES ('{}','{}',{},'{}','{}')".format(
-            ctx.author.id, ctx.guild.id, usertrophies, usertag, clubtag))
-    await ctx.send(
-        "Вы успешно зарегистрировались на нашем сервере! Ваш никнейм в игре Brawl Stars: {}! Если это не так , то обратитесь за помощью к модераторам!".format(
-            username))
-    cursor.execute("UPDATE users SET brawlstatus = TRUE WHERE user_id = '{}' AND guild_id = '{}'".format(ctx.author.id, ctx.guild.id))
-    conn.commit()
-
-
-@bot.command()
-async def brawlcard(ctx, member: discord.Member = None):
-    if member == None:
-        member = ctx.author
-    if brawlplayers.get(member.id) == None:
-        await ctx.send(
-            "Пользователь {} еще не зарегистрировался! Чтобы зарегистрироваться прейдите в канал 'регистрация'!".format(
-                member.mention))
-    else:
-        await ctx.send("У вас {} кубков в игре Brawl Stars".format(brawlplayers[member.id]["trophies"]))
-
-
-@bot.command()
-async def brawlclub(ctx, member: discord.Member = None):
-    if member == None:
-        member = ctx.author
-    if brawlplayers.get(member.id) == None:
-        await ctx.send(
-            "Пользователь {} еще не зарегистрировался! Чтобы зарегистрироваться прейдите в канал 'регистрация'!".format(
-                member.mention))
-    else:
-        await ctx.send("gg")
-
 
 @bot.command()
 async def help(ctx, arg=None):
     global colors
     emb = discord.Embed(color=random.choice(colors))
     if arg == None:
-        emb.title = "Команды бота BuCord:"
+        emb.title = "Команды бота BuCord*:"
         emb.description = "<> - обязательный аргумент , [] - необязательный аргумент"
         emb.add_field(name=".help [команда]", value="выводит это сообщение")
         emb.add_field(name=".dollar", value="выводит курс доллара к рублю")
         emb.add_field(name=".jackpot_info", value="выводит кол-во монет , которое составляет джекпот")
         emb.add_field(name=".balans [участник сервера]", value="выводит баланс участника")
-        emb.add_field(name=".brawlclub [участник сервера]", value="выводит клуб участника")
-        emb.add_field(name=".brawltrophies [участник сервера]", value="выводит кубки участника")
         emb.add_field(name=".give <учатсник сервера> <монеты>",
                       value="добавляет участнику указанное кол-во монет(только для модераторов)")
         emb.add_field(name=".mine_info [участник сервера]", value="выводит кол-во намайненых монет участника")
         emb.add_field(name=".miningvivod <монеты>", value="выводит монеты с майнинга на баланс (комиссия 5%)")
-        emb.add_field(name=".registr <тег в Brawl Stars>", value="регистрирует вас на сервере")
         emb.add_field(name=".stavka <монеты>", value="вы ставите монеты(принцип как в казино)")
         emb.add_field(name=".top", value="выводит топ участников по монетам")
         emb.add_field(name=".usercard [участник сервера]", value="выводит карточку участника")
