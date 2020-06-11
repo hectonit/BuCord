@@ -32,11 +32,28 @@ colors = [0xFF0000, 0x39d0d6, 0xff6699, 0x17f90f, 0x0f13f9, 0xdff90f, 0xff8100, 
 
 @bot.event
 async def on_ready():
-    print("Bot logged as {}".format(bot.user))
+    global conn, cursor
     await bot.change_presence(activity=discord.Game(".help"))
+    all_members = 0
     for guild in bot.guilds:
-        if len(guild.members) >= 1000:
-            await guild.text_channels[0].send("Ваш сервер слишком велик для нашего бота для того , чтобы он работал надо задонатить!!!")
+        all_members += len(guild.members)
+        if all_members >= 10000 or guild.id == 264445053596991498:
+            if len(guild.text_channels) <= 0:
+                pass
+            else:
+                await guild.text_channels[0].send(
+                    "Ваш сервер слишком велик для нашего бота для того , чтобы он работал надо задонатить!!!")
+            continue
+        if guild.system_channel == None:
+            pass
+        else:
+            await guild.system_channel.send("Хей, я снова онлайн!")
+        cursor.execute("SELECT * FROM guilds WHERE guild_id = %s", [str(guild.id)])
+        guilds = cursor.fetchall()
+        if len(guilds) == 0:
+            cursor.execute(
+                "INSERT INTO guilds (guild_id, moder_roles, welcome, goodbye, jackpot) VALUES (%s , %s , %s, %s , %s);",
+                [str(guild.id), ["0"], "Здарова, {}", "Прощай, {}", 10000])
         for member in guild.members:
             if member.id == 706401122721595444:
                 return
@@ -48,17 +65,20 @@ async def on_ready():
                     "INSERT INTO users (user_id,level,money,minemoney,points,guild_id) VALUES ('{}',{},{},{},{},'{}');".format(
                         member.id, 0, 5, 0, 0, guild.id))
             conn.commit()
+    print("Bot logged as {}".format(bot.user))
 
 
 @bot.event
 async def on_message(message):
     global dt, cursor, conn
+    if message.guild.id == 264445053596991498:
+        return
     newdt = int(time.time())
     newdt = newdt // 60
     if message.author.id == 706401122721595444:
         return
     if newdt > dt:
-        cursor.execute("SELECT * FROM users;")
+        cursor.execute("SELECT * FROM users WHERE guild_id = '{}';".format(message.guild.id))
         otherides = cursor.fetchall()
         ides = []
         for elem in otherides:
@@ -117,19 +137,27 @@ async def on_command_error(ctx, error):
 
 @bot.event
 async def on_member_join(member):
+    global conn, cursor
     guild = member.guild
     channel = guild.system_channel
+    if guild.id == 264445053596991498:
+        return
     cursor.execute(
         "INSERT INTO users (user_id,level,money,minemoney,points,guild_id) VALUES ('{}',{},{},{},{},'{}');".format(
             member.id, 0, 5, 0, 0, guild.id))
+    conn.commit()
     await channel.send("Здарова , {}".format(member.mention))
 
 
 @bot.event
 async def on_member_remove(member):
+    global cursor, conn
     guild = member.guild
     channel = guild.system_channel
-    cursor.execute("DELETE FROM users WHERE user_id = '{}' AND guild_id = '{}';".format(member.id,guild.id))
+    if guild.id == 264445053596991498:
+        return
+    cursor.execute("DELETE FROM users WHERE user_id = '{}' AND guild_id = '{}';".format(member.id, guild.id))
+    conn.commit()
     await channel.send("Прощай , {}".format(member))
 
 
@@ -314,6 +342,7 @@ async def miningvivod(ctx, arg):
             "UPDATE users SET money = {} WHERE user_id = '{}' AND guild_id = '{}';".format(finance, ctx.author.id,
                                                                                            ctx.guild.id))
         await ctx.send("Вы успешно вывели {} монет".format(anoarg))
+        conn.commit()
 
 
 @bot.command()
@@ -324,13 +353,12 @@ async def dollar(ctx):
     await ctx.send("Курс доллара: {} рублей".format(course))
 
 
-
 @bot.command()
 async def help(ctx, arg=None):
     global colors
     emb = discord.Embed(color=random.choice(colors))
     if arg == None:
-        emb.title = "Команды бота BuCord:"
+        emb.title = "Команды бота BuCord*:"
         emb.description = "<> - обязательный аргумент , [] - необязательный аргумент"
         emb.add_field(name=".help [команда]", value="выводит это сообщение")
         emb.add_field(name=".dollar", value="выводит курс доллара к рублю")
@@ -345,6 +373,16 @@ async def help(ctx, arg=None):
         emb.add_field(name=".usercard [участник сервера]", value="выводит карточку участника")
     await ctx.send(embed=emb)
 
+
+@bot.command()
+async def moder_roles(ctx, roles: commands.Greedy[discord.Role]):
+    global conn, cursor
+    roles_ides = []
+    for role in roles:
+        roles_ides.append(str(role.id))
+    print(roles_ides)
+    cursor.execute("UPDATE guilds SET moder_roles = %s WHERE guild_id = %s;", [roles_ides, str(ctx.guild.id)])
+    conn.commit()
 
 token = os.environ.get('BOT_TOKEN')
 bot.run(str(token))
