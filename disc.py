@@ -1,5 +1,5 @@
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord import utils
 import random
 import os
@@ -27,28 +27,18 @@ dt = dt // 60
 
 brawlplayers = {}
 
-colors = [0xFF0000, 0x39d0d6, 0xff6699, 0x17f90f,
-          0x0f13f9, 0xdff90f, 0xff8100, 0x740001, 0x330066]
+colors = [0x9b59b6, 0x1abc9c, 0x2ecc71, 0x3498db,
+          0x34495e, 0x16a085, 0x27ae60, 0x2980b9, 0x8e44ad, 0x2c3e50,
+          0xf1c40f, 0xe67e22, 0xe74c3c, 0xecf0f1,
+          0x95a5a6, 0xf39c12, 0xd35400, 0xc0392b, 0xbdc3c7, 0x7f8c8d
+          ]
 
 
 def is_moder(ctx):
-    global cursor, conn
-    cursor.execute(
-        "SELECT moder_roles FROM guilds WHERE guild_id = %s;", (str(ctx.guild.id, )))
-    mroles = (cursor.fetchall())[0]
     for role in ctx.author.roles:
-        if str(role.id) in mroles:
+        if role.permissions.administrator:
             return True
-        else:
-            mmroles = []
-            for mrole in mroles:
-                mroleobj = ctx.author.guild.get_role(mrole)
-                if mroleobj.mentionable:
-                    mroleobj = mroleobj.mention
-                else:
-                    mroleobj = mroleobj.name
-                mmroles.append(mroleobj)
-            return mmroles
+    return False
 
 
 @bot.event
@@ -70,7 +60,7 @@ async def on_ready():
         else:
             await guild.system_channel.send("Хей, я снова онлайн!")
         cursor.execute(
-            "SELECT * FROM guilds WHERE guild_id = %s", [str(guild.id)])
+            "SELECT * FROM guilds WHERE guild_id = %s", (str(guild.id), ))
         guilds = cursor.fetchall()
         if len(guilds) == 0:
             cursor.execute(
@@ -168,14 +158,13 @@ async def on_member_join(member):
     if guild.id == 264445053596991498:
         return
     cursor.execute(
-        "SELECT welcome FROM guilds WHERE guild_id = %s;".format(str(guild.id)))
+        "SELECT welcome FROM guilds WHERE guild_id = %s;", (str(guild.id),))
     text = cursor.fetchall[0]
     cursor.execute(
         "INSERT INTO users (user_id,level,money,minemoney,points,guild_id) VALUES ('{}',{},{},{},{},'{}');".format(
             member.id, 0, 5, 0, 0, guild.id))
     conn.commit()
     await channel.send(text.format(member.mention))
-
 
 
 @bot.event
@@ -186,7 +175,7 @@ async def on_member_remove(member):
     if guild.id == 264445053596991498:
         return
     cursor.execute(
-        "SELECT welcome FROM guilds WHERE guild_id = %s;",(str(guild.id),))
+        "SELECT welcome FROM guilds WHERE guild_id = %s;", (str(guild.id),))
     text = cursor.fetchall()[0]
     cursor.execute("DELETE FROM users WHERE user_id = '{}' AND guild_id = '{}';".format(
         member.id, guild.id))
@@ -198,7 +187,8 @@ async def on_member_remove(member):
 async def on_guild_join(guild):
     global colors
     channel = guild.system_channel
-    emb = discord.Embed(color=random.choice(colors), description="Пожалуйста настройте бота!!!\nВведите .help и просмотрите комнады в секции 'модерация'\n**ВАЖНО**: сначала настроите роли модераторов с помощью команды .moder_roles, введите .help при необходимости\nНадеюсь бот вам понравится!\nSUPPORT email: progcuber@gmail.com")
+    emb = discord.Embed(color=random.choice(colors),
+                        description="Пожалуйста настройте бота!!!\nВведите .help и просмотрите комнады в секции 'модерация'\n**ВАЖНО**: сначала настроите роли модераторов с помощью команды .moder_roles, введите .help при необходимости\nНадеюсь бот вам понравится!\nSUPPORT email: progcuber@gmail.com")
     await channel.send(embed=emb)
 
 
@@ -334,14 +324,15 @@ async def give(ctx, member: discord.Member, arg):
         pass
     else:
         await ctx.send(
-            "У вас нет модераторской роли!!! На данный момент модераторскими ролями являются: {}".format(mmroles))
+            "У вас нет модераторской роли!!! Вам нужна роль с правами администратора!")
         return
     arg = int(arg)
     cursor.execute("UPDATE users SET money = money+{} WHERE user_id = '{}' AND guild_id = '{}';".format(arg,
                                                                                                         ctx.author.id,
                                                                                                         ctx.guild.id))
-    await ctx.channel.send("{} вам выдано {} монет".format(member.mention, arg))
+    await ctx.send("{} вам выдано {} монет".format(member.mention, arg))
     member = member
+    conn.commit()
 
 
 @bot.command()
@@ -428,44 +419,12 @@ async def help(ctx, arg=None):
         emb.add_field(name=".top", value="выводит топ участников по монетам")
         emb.add_field(name=".usercard [участник сервера]",
                       value="выводит карточку участника")
-        emb.add_field(name=".moder_roles <роль[, ]>",
-                      value="настраивает роли модераторов")
         emb.add_field(name=".goodbye <текст , символами {} обозначьте участника>",
                       value="настраивает прощание")
         emb.add_field(name=".welcome <текст , символами {} обозначьте участника>",
                       value="настраивает приветствие")
     await ctx.send(embed=emb)
 
-
-@bot.command()
-async def moder_roles(ctx, roles: commands.Greedy[discord.Role]):
-    global conn, cursor
-    cursor.execute(
-        "SELECT moder_roles FROM guilds WHERE guild_id = %s;", (str(ctx.guild.id, )))
-    mroles = (cursor.fetchall())[0]
-    c = 0
-    if mroles == ["0"]:
-        for role in ctx.author.roles:
-            if role.permissions.administrator:
-                c = 1
-                break
-        if c == 0:
-            return
-    else:
-        mmroles = is_moder(ctx)
-        if mmroles:
-            pass
-        else:
-            await ctx.send(
-                "У вас нет модераторской роли!!!")
-            return
-    roles_ides = []
-    for role in roles:
-        roles_ides.append(str(role.id))
-    cursor.execute("UPDATE guilds SET moder_roles = %s WHERE guild_id = %s;",
-                   (roles_ides, str(ctx.guild.id),))
-    conn.commit()
-    await ctx.send("Роли успешно изменены.")
 
 
 @bot.command()
@@ -476,7 +435,7 @@ async def welcome(ctx, text):
         pass
     else:
         await ctx.send(
-            "У вас нет модераторской роли!!! На данный момент модераторскими ролями являются: {}".format(mmroles))
+            "У вас нет модераторской роли!!! Вам нужна роль с правами администратора!")
         return
     cursor.execute(
         "UPDATE guilds SET welcome = %s WHERE guild_id = %s;", (text, str(ctx.guild.id),))
@@ -492,7 +451,7 @@ async def goodbye(ctx, text):
         pass
     else:
         await ctx.send(
-            "У вас нет модераторской роли!!! На данный момент модераторскими ролями являются: {}".format(mmroles))
+            "У вас нет модераторской роли!!! Вам нужна роль с правами администратора!")
         return
     cursor.execute(
         "UPDATE guilds SET goodbye = %s WHERE guild_id = %s;", (text, str(ctx.guild.id),))
