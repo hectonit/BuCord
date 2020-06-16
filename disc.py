@@ -4,10 +4,8 @@ from discord import utils
 import random
 import os
 import asyncio
-import time
 import requests
 import json
-import datetime
 import psycopg2
 from bs4 import BeautifulSoup as BS
 
@@ -17,13 +15,9 @@ bot.remove_command("help")
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
 conn = psycopg2.connect(DATABASE_URL, sslmode="require")
-
 cursor = conn.cursor()
 
 jackpot = 10000
-
-dt = int(time.time())
-dt = dt // 60
 
 brawlplayers = {}
 
@@ -60,7 +54,7 @@ async def on_ready():
         else:
             await guild.system_channel.send("Хей, я снова онлайн!")
         cursor.execute(
-            "SELECT * FROM guilds WHERE guild_id = %s", (str(guild.id), ))
+            "SELECT * FROM guilds WHERE guild_id = %s", (str(guild.id),))
         guilds = cursor.fetchall()
         if len(guilds) == 0:
             cursor.execute(
@@ -77,44 +71,19 @@ async def on_ready():
                     "INSERT INTO users (user_id,level,money,minemoney,points,guild_id) VALUES ('{}',{},{},{},{},'{}');".format(
                         member.id, 0, 5, 0, 0, guild.id))
             conn.commit()
+    # mine.start()
     print("Bot logged as {}".format(bot.user))
 
 
 @bot.event
 async def on_message(message):
-    global dt, cursor, conn
+    global cursor, conn
     if message.guild == None:
         return
     if message.guild.id == 264445053596991498:
         return
-    newdt = int(time.time())
-    newdt = newdt // 60
     if message.author.bot:
         return
-    if newdt > dt:
-        cursor.execute(
-            "SELECT * FROM users WHERE guild_id = '{}';".format(message.guild.id))
-        otherides = cursor.fetchall()
-        ides = []
-        for elem in otherides:
-            ides.append(elem[0])
-        for id in ides:
-            cursor.execute(
-                "SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}' AND guild_id = '{}';".format(
-                    message.author.id, message.guild.id))
-            minemoney = cursor.fetchall()
-            minemoney = int(minemoney[0][3])
-            minemoney = minemoney + newdt - dt
-            cursor.execute(
-                "UPDATE users SET minemoney = {} WHERE user_id = '{}' AND guild_id = '{}';".format(minemoney, id,
-                                                                                                   message.guild.id))
-            conn.commit()
-        dt = newdt
-    cursor.execute(
-        "SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}' AND guild_id = '{}';".format(
-            message.author.id, message.guild.id))
-    money = cursor.fetchall()
-    money = int(money[0][2]) + 1
     cursor.execute(
         "SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}' AND guild_id = '{}';".format(
             message.author.id, message.guild.id))
@@ -129,17 +98,14 @@ async def on_message(message):
         level += 1
         points -= 100
     cursor.execute(
-        "UPDATE users SET money = {} WHERE user_id = '{}' AND guild_id = '{}';".format(money, message.author.id,
-                                                                                       message.guild.id))
+        "UPDATE users SET money = money + 1 WHERE user_id = '{}' AND guild_id = '{}';".format(message.author.id,
+                                                                                              message.guild.id))
     cursor.execute(
         "UPDATE users SET points = {} WHERE user_id = '{}' AND guild_id = '{}';".format(points, message.author.id,
                                                                                         message.guild.id))
     cursor.execute(
         "UPDATE users SET level = {} WHERE user_id = '{}' AND guild_id = '{}';".format(level, message.author.id,
                                                                                        message.guild.id))
-    cursor.execute(
-        "UPDATE users SET guild_id = {} WHERE user_id = '{}' AND guild_id = '{}';".format(level, message.guild.id,
-                                                                                          message.guild.id))
     conn.commit()
     await bot.process_commands(message)
 
@@ -159,7 +125,7 @@ async def on_member_join(member):
         return
     cursor.execute(
         "SELECT welcome FROM guilds WHERE guild_id = %s;", (str(guild.id),))
-    text = cursor.fetchall[0]
+    text = cursor.fetchall[0][0]
     cursor.execute(
         "INSERT INTO users (user_id,level,money,minemoney,points,guild_id) VALUES ('{}',{},{},{},{},'{}');".format(
             member.id, 0, 5, 0, 0, guild.id))
@@ -175,8 +141,8 @@ async def on_member_remove(member):
     if guild.id == 264445053596991498:
         return
     cursor.execute(
-        "SELECT welcome FROM guilds WHERE guild_id = %s;", (str(guild.id),))
-    text = cursor.fetchall()[0]
+        "SELECT goodbye FROM guilds WHERE guild_id = %s;", (str(guild.id),))
+    text = cursor.fetchall()[0][0]
     cursor.execute("DELETE FROM users WHERE user_id = '{}' AND guild_id = '{}';".format(
         member.id, guild.id))
     conn.commit()
@@ -198,9 +164,43 @@ async def on_guild_remove(guild):
     await channel.send("Эхххх....Жаль , что я вам не пригодился....\nP.S. Все данные удаляются")
 
 
+@bot.event
+async def on_disconnect():
+    print("DISCONNECTED")
+
+
+@tasks.loop(minutes=1.0)
+async def mine():
+    global cursor, conn
+    for guild in bot.guilds:
+        if guild.id == 264445053596991498:
+            continue
+        for member in guild.members:
+            cursor.execute("UPDATE users SET minemoney = minemoney + 1 WHERE user_id = %s;", (str(member.id),))
+    conn.commit()
+
+
+mine.start()
+
+
+@tasks.loop(hours=1.0)
+async def reconnect():
+    global cursor, conn
+    try:
+        cursor.execute("SELECT * FROM guilds;")
+    except psycopg2.InterfaceError:
+        conn = psycopg2.connect(DATABASE_URL, sslmode="require")
+        cursor = conn.cursor()
+    else:
+        conn.close()
+        conn = psycopg2.connect(DATABASE_URL, sslmode="require")
+        cursor = conn.cursor()
+
+
+reconnect.start()
+
+
 # ready
-
-
 @bot.command()
 async def stavka(ctx, arg: int):
     global cursor, jackpot, colors, conn
@@ -342,17 +342,13 @@ async def jackpot_info(ctx):
 
 @bot.command()
 async def mine_info(ctx, member: discord.Member = None):
-    global dt
     if member == None:
         member = ctx.author
-    newdt = int(time.time())
-    newdt = newdt // 60
     cursor.execute(
         "SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}' AND guild_id = '{}';".format(
             member.id, ctx.guild.id))
     minefinance = cursor.fetchall()
-    minefinance = minefinance[0][3] + newdt - dt
-    dt = newdt
+    minefinance = minefinance[0][3]
     await ctx.channel.send("{} , вы намайнили {} монет.".format(member.mention, minefinance))
 
 
@@ -424,7 +420,6 @@ async def help(ctx, arg=None):
         emb.add_field(name=".welcome <текст , символами {} обозначьте участника>",
                       value="настраивает приветствие")
     await ctx.send(embed=emb)
-
 
 
 @bot.command()
