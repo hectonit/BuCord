@@ -176,7 +176,7 @@ async def mine():
         if guild.id == 264445053596991498:
             continue
         for member in guild.members:
-            cursor.execute("UPDATE users SET minemoney = minemoney + 1 WHERE user_id = %s;", (str(member.id),))
+            cursor.execute("UPDATE users SET minemoney = minemoney + 1 WHERE user_id = %s AND guild_id = %s;", (str(member.id),str(guild.id),))
     conn.commit()
 
 
