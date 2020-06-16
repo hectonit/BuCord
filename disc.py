@@ -7,11 +7,15 @@ import asyncio
 import requests
 import json
 import psycopg2
+import dbl
 from bs4 import BeautifulSoup as BS
 
 bot = commands.Bot(command_prefix='.')
 client = discord.Client()
 bot.remove_command("help")
+
+TOKEN = os.environ.get("DBL_TOKEN")
+dblpy = dbl.DBLClient(bot,TOKEN,autopost=True)
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
 conn = psycopg2.connect(DATABASE_URL, sslmode="require")
@@ -71,7 +75,6 @@ async def on_ready():
                     "INSERT INTO users (user_id,level,money,minemoney,points,guild_id) VALUES ('{}',{},{},{},{},'{}');".format(
                         member.id, 0, 5, 0, 0, guild.id))
             conn.commit()
-    # mine.start()
     print("Bot logged as {}".format(bot.user))
 
 
@@ -131,6 +134,11 @@ async def on_member_join(member):
             member.id, 0, 5, 0, 0, guild.id))
     conn.commit()
     await channel.send(text.format(member.mention))
+
+
+@bot.event
+async def on_command(ctx):
+    await ctx.send("TEST COMMAND")
 
 
 @bot.event
@@ -198,6 +206,16 @@ async def reconnect():
 
 
 reconnect.start()
+
+
+@tasks.loop(seconds=1.0)
+async def statuschange():
+    await bot.change_presence(activity=discord.Game(".help"))
+    asyncio.sleep(1.0)
+    await bot.change_presence(activity=discord.Game("{} servers".format(dblpy.guild_count())))
+
+
+statuschange.start()
 
 
 # ready
