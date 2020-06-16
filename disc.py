@@ -136,10 +136,6 @@ async def on_member_join(member):
     await channel.send(text.format(member.mention))
 
 
-@bot.event
-async def on_command(ctx):
-    await ctx.send("TEST COMMAND")
-
 
 @bot.event
 async def on_member_remove(member):
@@ -414,7 +410,7 @@ async def help(ctx, arg=None):
     global colors
     emb = discord.Embed(color=random.choice(colors))
     if arg == None:
-        emb.title = "Команды бота BuCord*:"
+        emb.title = "Команды бота BuCord:"
         emb.description = "<> - обязательный аргумент , [] - необязательный аргумент"
         emb.add_field(name=".help [команда]", value="выводит это сообщение")
         emb.add_field(name=".dollar", value="выводит курс доллара к рублю")
