@@ -88,10 +88,10 @@ async def on_message(message):
     if message.author.bot:
         return
     cursor.execute(
-        "SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}' AND guild_id = '{}';".format(
+        "SELECT points FROM users WHERE user_id = '{}' AND guild_id = '{}';".format(
             message.author.id, message.guild.id))
     points = cursor.fetchall()
-    points = int(points[0][4]) + 1
+    points = int(points[0][0]) + 1
     cursor.execute(
         "SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}' AND guild_id = '{}';".format(
             message.author.id, message.guild.id))
@@ -115,8 +115,10 @@ async def on_message(message):
 
 @bot.event
 async def on_command_error(ctx, error):
-    if isinstance(error, discord.ext.commands.errors.CommandNotFound):
-        await ctx.send('Команда не найдена')
+    user_id = bot.owner_id
+    user = bot.get_user(user_id)
+    await user.send("Произошла ошибка: {}".format(error))
+    await ctx.send("Произошла ошибка информация для дебага уже отправлена разработчикам.")
 
 
 @bot.event
@@ -128,13 +130,12 @@ async def on_member_join(member):
         return
     cursor.execute(
         "SELECT welcome FROM guilds WHERE guild_id = %s;", (str(guild.id),))
-    text = cursor.fetchall[0][0]
+    text = str(cursor.fetchall[0][0])
     cursor.execute(
         "INSERT INTO users (user_id,level,money,minemoney,points,guild_id) VALUES ('{}',{},{},{},{},'{}');".format(
             member.id, 0, 5, 0, 0, guild.id))
     conn.commit()
     await channel.send(text.format(member.mention))
-
 
 
 @bot.event
@@ -146,11 +147,11 @@ async def on_member_remove(member):
         return
     cursor.execute(
         "SELECT goodbye FROM guilds WHERE guild_id = %s;", (str(guild.id),))
-    text = cursor.fetchall()[0][0]
+    text = str(cursor.fetchall()[0][0])
     cursor.execute("DELETE FROM users WHERE user_id = '{}' AND guild_id = '{}';".format(
         member.id, guild.id))
     conn.commit()
-    await channel.send(text.format(member.mention))
+    await channel.send(text.format(member.nick))
 
 
 @bot.event
@@ -180,8 +181,9 @@ async def mine():
         if guild.id == 264445053596991498:
             continue
         for member in guild.members:
-            cursor.execute("UPDATE users SET minemoney = minemoney + 1 WHERE user_id = %s AND guild_id = %s;", (str(member.id),str(guild.id),))
-    conn.commit()
+            cursor.execute("UPDATE users SET minemoney = minemoney + 1 WHERE user_id = %s AND guild_id = %s;",
+                           (str(member.id), str(guild.id),))
+            conn.commit()
 
 
 mine.start()
@@ -208,7 +210,7 @@ reconnect.start()
 async def statuschange():
     await bot.change_presence(activity=discord.Game(".help"))
     asyncio.sleep(1.0)
-    await bot.change_presence(activity=discord.Game("{} servers".format(dblpy.guild_count())))
+    await bot.change_presence(activity=discord.Game("{} servers".format(len(bot.guilds))))
 
 
 statuschange.start()
@@ -230,7 +232,8 @@ async def stavka(ctx, arg: int):
         finalresult = int(arg * multi)
         firstfinance = userfinance[0][2] - arg
         cursor.execute(
-            "UPDATE users SET money = {} WHERE user_id = '{}' AND guild_id = '{}';".format(firstfinance, ctx.author.id,
+            "UPDATE users SET money = {} WHERE user_id = '{}' AND guild_id = '{}';".format(firstfinance,
+                                                                                           ctx.author.id,
                                                                                            ctx.guild.id))
         jackpot += arg
         jackpot -= finalresult
@@ -248,9 +251,10 @@ async def stavka(ctx, arg: int):
             jackpot = 10000
         else:
             lastfinance = finalresult + firstfinance
-            cursor.execute("UPDATE users SET money = {} WHERE user_id = '{}' AND guild_id = '{}';".format(lastfinance,
-                                                                                                          ctx.author.id,
-                                                                                                          ctx.guild.id))
+            cursor.execute(
+                "UPDATE users SET money = {} WHERE user_id = '{}' AND guild_id = '{}';".format(lastfinance,
+                                                                                               ctx.author.id,
+                                                                                               ctx.guild.id))
             await ctx.send(embed=emb)
     conn.commit()
 
@@ -267,7 +271,7 @@ async def balans(ctx, member: discord.Member = None):
             member.id, ctx.guild.id))
     userfinance = cursor.fetchall()
     emb.set_author(name="Баланс {} : {}$".format(
-        member, userfinance[0][2]), icon_url=member.avatar_url)
+        member.nick, userfinance[0][2]), icon_url=member.avatar_url)
     await ctx.send(embed=emb)
     member = member
 
@@ -283,7 +287,7 @@ async def usercard(ctx, member: discord.Member = None):
             ctx.author.id, ctx.guild.id))
     usercardcomm = cursor.fetchall()
     emb.set_thumbnail(url=member.avatar_url)
-    emb.title = "Профиль участника {}".format(member)
+    emb.title = "Профиль участника {}".format(member.nick)
     emb.add_field(name="Уровень", value=("{}".format(usercardcomm[0][1])))
     emb.add_field(name="Очки", value=("{}".format(usercardcomm[0][4])))
     await ctx.send(embed=emb)
@@ -314,19 +318,19 @@ async def top(ctx):
             continue
         counter += 1
     ind1 = (
-        "Первое место - {} - {}".format(bot.get_user(torr[0][1]), torr[0][0]))
+        "Первое место - {} - {}".format(bot.get_user(torr[0][1]).nick, torr[0][0]))
     if len(torr) >= 2:
         ind2 = (
-            "Второе место - {} - {}".format(bot.get_user(torr[1][1]), torr[1][0]))
+            "Второе место - {} - {}".format(bot.get_user(torr[1][1]).nick, torr[1][0]))
     if len(torr) >= 3:
         ind3 = (
-            "Третье место - {} - {}".format(bot.get_user(torr[2][1]), torr[2][0]))
+            "Третье место - {} - {}".format(bot.get_user(torr[2][1]).nick, torr[2][0]))
     if len(torr) >= 4:
         ind4 = (
-            "Четвертое место - {} - {}".format(bot.get_user(torr[3][1]), torr[3][0]))
+            "Четвертое место - {} - {}".format(bot.get_user(torr[3][1]).nick, torr[3][0]))
     if len(torr) >= 5:
         ind5 = (
-            "Пятое место - {} - {}".format(bot.get_user(torr[4][1]), torr[4][0]))
+            "Пятое место - {} - {}".format(bot.get_user(torr[4][1]).nick, torr[4][0]))
     await ctx.send("{}\n{}\n{}\n{}\n{}".format(ind1, ind2, ind3, ind4, ind5))
 
 
@@ -342,7 +346,7 @@ async def give(ctx, member: discord.Member, arg):
         return
     arg = int(arg)
     cursor.execute("UPDATE users SET money = money+{} WHERE user_id = '{}' AND guild_id = '{}';".format(arg,
-                                                                                                        ctx.author.id,
+                                                                                                        member.id,
                                                                                                         ctx.guild.id))
     await ctx.send("{} вам выдано {} монет".format(member.mention, arg))
     member = member
@@ -387,9 +391,10 @@ async def miningvivod(ctx, arg):
         arg = int(arg * 0.95)
         finance = finance + arg
         minefinance = minefinance - arg
-        cursor.execute("UPDATE users SET minemoney = {} WHERE user_id = '{}' AND guild_id = '{}';".format(minefinance,
-                                                                                                          ctx.author.id,
-                                                                                                          ctx.guild.id))
+        cursor.execute(
+            "UPDATE users SET minemoney = {} WHERE user_id = '{}' AND guild_id = '{}';".format(minefinance,
+                                                                                               ctx.author.id,
+                                                                                               ctx.guild.id))
         cursor.execute(
             "UPDATE users SET money = {} WHERE user_id = '{}' AND guild_id = '{}';".format(finance, ctx.author.id,
                                                                                            ctx.guild.id))
