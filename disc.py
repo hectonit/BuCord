@@ -1,14 +1,12 @@
 import discord
+import traceback
 from discord.ext import commands, tasks
-from discord import utils
 import random
 import os
 import asyncio
 import requests
-import json
 import psycopg2
 import dbl
-from bs4 import BeautifulSoup as BS
 
 bot = commands.Bot(command_prefix='.')
 client = discord.Client()
@@ -117,8 +115,8 @@ async def on_message(message):
 async def on_command_error(ctx, error):
     user_id = 530751275663491092
     user = bot.get_user(user_id)
-    await user.send("Произошла ошибка: {}".format(error))
-    await ctx.send("Произошла ошибка информация для дебага уже отправлена разработчикам.")
+    await user.send("Произошла ошибка:\n{}".format(traceback.format_exc()))
+    await ctx.send("Произошла ошибка, информация для дебага уже отправлена разработчикам.")
 
 
 @bot.event
