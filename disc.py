@@ -115,7 +115,7 @@ async def on_message(message):
 
 @bot.event
 async def on_command_error(ctx, error):
-    user_id = bot.owner_id
+    user_id = 530751275663491092
     user = bot.get_user(user_id)
     await user.send("Произошла ошибка: {}".format(error))
     await ctx.send("Произошла ошибка информация для дебага уже отправлена разработчикам.")
@@ -151,7 +151,7 @@ async def on_member_remove(member):
     cursor.execute("DELETE FROM users WHERE user_id = '{}' AND guild_id = '{}';".format(
         member.id, guild.id))
     conn.commit()
-    await channel.send(text.format(member.nick))
+    await channel.send(text.format(member))
 
 
 @bot.event
@@ -271,7 +271,7 @@ async def balans(ctx, member: discord.Member = None):
             member.id, ctx.guild.id))
     userfinance = cursor.fetchall()
     emb.set_author(name="Баланс {} : {}$".format(
-        member.nick, userfinance[0][2]), icon_url=member.avatar_url)
+        member, userfinance[0][2]), icon_url=member.avatar_url)
     await ctx.send(embed=emb)
     member = member
 
@@ -287,7 +287,7 @@ async def usercard(ctx, member: discord.Member = None):
             ctx.author.id, ctx.guild.id))
     usercardcomm = cursor.fetchall()
     emb.set_thumbnail(url=member.avatar_url)
-    emb.title = "Профиль участника {}".format(member.nick)
+    emb.title = "Профиль участника {}".format(member)
     emb.add_field(name="Уровень", value=("{}".format(usercardcomm[0][1])))
     emb.add_field(name="Очки", value=("{}".format(usercardcomm[0][4])))
     await ctx.send(embed=emb)
@@ -318,19 +318,19 @@ async def top(ctx):
             continue
         counter += 1
     ind1 = (
-        "Первое место - {} - {}".format(bot.get_user(torr[0][1]).nick, torr[0][0]))
+        "Первое место - {} - {}".format(bot.get_user(torr[0][1]), torr[0][0]))
     if len(torr) >= 2:
         ind2 = (
-            "Второе место - {} - {}".format(bot.get_user(torr[1][1]).nick, torr[1][0]))
+            "Второе место - {} - {}".format(bot.get_user(torr[1][1]), torr[1][0]))
     if len(torr) >= 3:
         ind3 = (
-            "Третье место - {} - {}".format(bot.get_user(torr[2][1]).nick, torr[2][0]))
+            "Третье место - {} - {}".format(bot.get_user(torr[2][1]), torr[2][0]))
     if len(torr) >= 4:
         ind4 = (
-            "Четвертое место - {} - {}".format(bot.get_user(torr[3][1]).nick, torr[3][0]))
+            "Четвертое место - {} - {}".format(bot.get_user(torr[3][1]), torr[3][0]))
     if len(torr) >= 5:
         ind5 = (
-            "Пятое место - {} - {}".format(bot.get_user(torr[4][1]).nick, torr[4][0]))
+            "Пятое место - {} - {}".format(bot.get_user(torr[4][1]), torr[4][0]))
     await ctx.send("{}\n{}\n{}\n{}\n{}".format(ind1, ind2, ind3, ind4, ind5))
 
 
