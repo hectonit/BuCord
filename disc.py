@@ -443,6 +443,8 @@ async def help(ctx, arg=None):
                       value="настраивает прощание")
         emb.add_field(name=".welcome <текст , символами {} обозначьте участника>",
                       value="настраивает приветствие")
+        emb.add_field(name=".findbug \"<краткое описание бага>\" \"<полное описание бага>\" [url-адрес картинки]",
+                      value="отправляет разработчикам информацию о баге")
     await ctx.send(embed=emb)
 
 
@@ -476,6 +478,18 @@ async def goodbye(ctx, text):
         "UPDATE guilds SET goodbye = %s WHERE guild_id = %s;", (text, str(ctx.guild.id),))
     conn.commit()
     await ctx.send("Прощание успешно изменено.")
+
+
+@bot.command()
+async def findbug(ctx, title, descreption, image_url=None):
+    user_id = 530751275663491092
+    user = bot.get_user(user_id)
+    emb = discord.Embed(title=title, description=descreption)
+    if image_url:
+        emb.set_image(image_url)
+    emb.set_author(name=ctx.author)
+    await user.send(embed=emb)
+    await ctx.send("Спасибо за то , что вы помогаете нам улучшить бота.")
 
 
 bot.run(str(token))
