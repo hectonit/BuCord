@@ -162,9 +162,16 @@ async def on_member_remove(member):
 @bot.event
 async def on_guild_join(guild):
     global colors
+    user_id = 530751275663491092
+    user = bot.get_user(user_id)
+    emb = discord.Embed(color=random.choice(colors))
+    emb.title = "У нас новый сервер !!!"
+    emb.description = "Название сервера: {}".format(guild.name)
+    emb.set_image(url=guild.icon)
+    await user.send(embed=emb)
     channel = guild.system_channel
     emb = discord.Embed(color=random.choice(colors),
-                        description="Пожалуйста настройте бота!!!\nВведите .help и просмотрите комнады в секции 'модерация'\n**ВАЖНО**: сначала настроите роли модераторов с помощью команды .moder_roles, введите .help при необходимости\nНадеюсь бот вам понравится!\nSUPPORT email: progcuber@gmail.com")
+                        description="Пожалуйста настройте бота!!!\nВведите .help и просмотрите комнады в секции 'модерация'\nНадеюсь бот вам понравится!\nSUPPORT email: progcuber@gmail.com")
     await channel.send(embed=emb)
 
 
