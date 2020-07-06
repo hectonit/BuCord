@@ -2,6 +2,8 @@ import discord
 from discord.ext import commands, tasks
 import random
 import os
+import sys
+import platform
 import asyncio
 import requests
 import psycopg2
@@ -452,6 +454,8 @@ async def help(ctx, arg=None):
                       value="настраивает приветствие")
         emb.add_field(name=".findbug \"<краткое описание бага>\" \"<полное описание бага>\" [url-адрес картинки]",
                       value="отправляет разработчикам информацию о баге")
+        emb.add_field(name=".botinfo",
+                      value="выводит информацию о боте")
     await ctx.send(embed=emb)
 
 
@@ -497,6 +501,15 @@ async def findbug(ctx, title, descreption, image_url=None):
     emb.set_author(name=ctx.author)
     await user.send(embed=emb)
     await ctx.send("Спасибо за то , что вы помогаете нам улучшить бота.")
+
+
+@bot.command()
+async def botinfo(ctx):
+    emb = discord.Embed(color=random.choice(colors))
+    emb.add_field(name="ОС:", value=sys.platform)
+    emb.add_field(name="Сервера:", value=len(bot.guilds))
+    emb.add_field(name="CPU:", value=platform.processor())
+    await ctx.send(embed=emb)
 
 
 bot.run(str(token))
