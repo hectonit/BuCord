@@ -223,7 +223,7 @@ reconnect.start()
 @tasks.loop(seconds=1.0)
 async def statuschange():
     await bot.change_presence(activity=discord.Game(".help"))
-    asyncio.sleep(1.0)
+    asyncio.sleep(5.0)
     await bot.change_presence(activity=discord.Game("{} servers".format(len(bot.guilds))))
 
 
