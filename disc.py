@@ -509,9 +509,9 @@ async def findbug(ctx, title, descreption, image_url=None):
 @bot.command()
 async def botinfo(ctx):
     emb = discord.Embed(color=random.choice(colors))
-    emb.add_field(name="ОС:", value=sys.platform)
-    emb.add_field(name="Сервера:", value=len(bot.guilds))
-    emb.add_field(name="CPU:", value=platform.processor())
+    emb.add_field(name="ОС:", value=("```{}```".format(sys.platform)))
+    emb.add_field(name="Сервера:", value=("```{}```".format(len(bot.guilds))))
+    emb.add_field(name="CPU:", value=("```{}```".format(platform.processor())))
     cursor.execute("SELECT worktime FROM botinfo;")
     work = cursor.fetchall()
     work = work[0][0]
