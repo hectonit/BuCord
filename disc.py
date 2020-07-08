@@ -228,6 +228,14 @@ async def statuschange():
 statuschange.start()
 
 
+@tasks.loop(minutes=1.0)
+async def worktime():
+    cursor.execute("UPDATE botinfo SET worktime = worktime + 1;")
+
+
+worktime.start()
+
+
 # ready
 @bot.command()
 async def stavka(ctx, arg: int):
@@ -504,6 +512,12 @@ async def botinfo(ctx):
     emb.add_field(name="ОС:", value=sys.platform)
     emb.add_field(name="Сервера:", value=len(bot.guilds))
     emb.add_field(name="CPU:", value=platform.processor())
+    cursor.execute("SELECT worktime FROM botinfo;")
+    work = cursor.fetchall()
+    work = work[0][0]
+    hours = work // 60
+    minutes = work % 60
+    emb.add_field(name="Время работы:", value=("{} часов , {} минут".format(hours, minutes)))
     await ctx.send(embed=emb)
 
 
