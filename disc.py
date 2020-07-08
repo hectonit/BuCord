@@ -49,7 +49,7 @@ def is_moder(ctx):
 @bot.event
 async def on_ready():
     global conn, cursor
-    await bot.change_presence(activity=discord.Game(".help"))
+    await bot.change_presence(activity=discord.Game(".help | {} servers".format(len(bot.guilds))))
     all_members = 0
     for guild in bot.guilds:
         all_members += len(guild.members)
@@ -218,16 +218,6 @@ async def reconnect():
 
 
 reconnect.start()
-
-
-@tasks.loop(seconds=1.0)
-async def statuschange():
-    await bot.change_presence(activity=discord.Game(".help"))
-    asyncio.sleep(5.0)
-    await bot.change_presence(activity=discord.Game("{} servers".format(len(bot.guilds))))
-
-
-statuschange.start()
 
 
 # ready
