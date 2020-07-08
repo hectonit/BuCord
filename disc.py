@@ -49,7 +49,7 @@ def is_moder(ctx):
 @bot.event
 async def on_ready():
     global conn, cursor
-    await bot.change_presence(activity=discord.Game(".help | {} servers".format(len(bot.guilds))))
+    await bot.change_presence(activity=discord.Game(".help | {} servers".format()))
     all_members = 0
     for guild in bot.guilds:
         all_members += len(guild.members)
@@ -220,6 +220,14 @@ async def reconnect():
 reconnect.start()
 
 
+@tasks.loop(hours=1.0)
+async def statuschange():
+    await bot.change_presence(activity=discord.Game(".help | {} servers".format()))
+
+
+statuschange.start()
+
+
 # ready
 @bot.command()
 async def stavka(ctx, arg: int):
@@ -277,7 +285,6 @@ async def balans(ctx, member: discord.Member = None):
     emb.set_author(name="Баланс {} : {}$".format(
         member, userfinance[0][2]), icon_url=member.avatar_url)
     await ctx.send(embed=emb)
-    member = member
 
 
 @bot.command()
@@ -295,7 +302,6 @@ async def usercard(ctx, member: discord.Member = None):
     emb.add_field(name="Уровень", value=("{}".format(usercardcomm[0][1])))
     emb.add_field(name="Очки", value=("{}".format(usercardcomm[0][4])))
     await ctx.send(embed=emb)
-    member = member
     conn.commit()
 
 
@@ -303,7 +309,6 @@ async def usercard(ctx, member: discord.Member = None):
 async def top(ctx):
     global cursor
     torr = []
-    ind1 = "Нет информации"
     ind2 = "Нет информации"
     ind3 = "Нет информации"
     ind4 = "Нет информации"
