@@ -49,7 +49,7 @@ def is_moder(ctx):
 @bot.event
 async def on_ready():
     global conn, cursor
-    await bot.change_presence(activity=discord.Game(".help | {} servers".format()))
+    await bot.change_presence(activity=discord.Game(".help | {} servers".format(len(bot.guilds))))
     all_members = 0
     for guild in bot.guilds:
         all_members += len(guild.members)
@@ -57,15 +57,23 @@ async def on_ready():
             if len(guild.text_channels) <= 0:
                 pass
             else:
-                await guild.text_channels[0].send(
-                    "Ваш сервер слишком велик для нашего бота для того , чтобы он работал надо задонатить!!!")
+                try:
+                    await guild.text_channels[0].send(
+                        "Ваш сервер слишком велик для нашего бота для того , чтобы он работал надо задонатить!!!")
+                except:
+                    pass
             continue
         if guild.system_channel == None:
             pass
         else:
             await guild.system_channel.send("Хей, я снова онлайн!")
-        cursor.execute(
-            "SELECT * FROM guilds WHERE guild_id = %s", (str(guild.id),))
+        try:
+            cursor.execute("SELECT * FROM guilds;")
+        except:
+            conn.close()
+            conn = psycopg2.connect(DATABASE_URL, sslmode="require")
+            cursor = conn.cursor()
+        cursor.execute("SELECT * FROM guilds WHERE guild_id = %s;", (str(guild.id),))
         guilds = cursor.fetchall()
         if len(guilds) == 0:
             cursor.execute(
@@ -95,8 +103,8 @@ async def on_message(message):
     if message.author.bot:
         return
     cursor.execute(
-        "SELECT points FROM users WHERE user_id = '{}' AND guild_id = '{}';".format(
-            message.author.id, message.guild.id))
+        "SELECT points FROM users WHERE user_id = %s AND guild_id = %s;", (
+            str(message.author.id), str(message.guild.id),))
     points = cursor.fetchall()
     points = int(points[0][0]) + 1
     cursor.execute(
