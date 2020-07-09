@@ -65,12 +65,6 @@ async def on_ready():
             pass
         else:
             await guild.system_channel.send("Хей, я снова онлайн!")
-        try:
-            cursor.execute("SELECT * FROM guilds;")
-        except:
-            conn.close()
-            conn = psycopg2.connect(DATABASE_URL, sslmode="require")
-            cursor = conn.cursor()
         cursor.execute("SELECT * FROM guilds WHERE guild_id = %s;", (str(guild.id),))
         guilds = cursor.fetchall()
         if len(guilds) == 0:
@@ -100,12 +94,6 @@ async def on_message(message):
         return
     if message.author.bot:
         return
-    try:
-        cursor.execute("SELECT * FROM guilds;")
-    except:
-        conn.close()
-        conn = psycopg2.connect(DATABASE_URL, sslmode="require")
-        cursor = conn.cursor()
     cursor.execute(
         "SELECT points FROM users WHERE user_id = %s AND guild_id = %s;", (
             str(message.author.id), str(message.guild.id),))
