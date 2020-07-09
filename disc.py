@@ -189,7 +189,7 @@ async def on_disconnect():
     print("DISCONNECTED")
 
 
-@tasks.loop(minutes=1.0)
+@tasks.loop(minutes=5.0)
 async def mine():
     global cursor, conn
     for guild in bot.guilds:
@@ -367,7 +367,6 @@ async def give(ctx, member: discord.Member, arg):
                                                                                                         member.id,
                                                                                                         ctx.guild.id))
     await ctx.send("{} вам выдано {} монет".format(member.mention, arg))
-    member = member
     conn.commit()
 
 
