@@ -185,6 +185,7 @@ async def on_guild_remove(guild):
 
 @bot.event
 async def on_disconnect():
+    cursor.execute("UPDATE botinfo SET worktime = 0;")
     print("DISCONNECTED")
 
 
@@ -228,12 +229,12 @@ async def statuschange():
 statuschange.start()
 
 
-#@tasks.loop(minutes=1.0)
-#async def worktime():
-#    cursor.execute("UPDATE botinfo SET worktime = worktime + 1;")
-#
-#
-#worktime.start()
+@tasks.loop(minutes=1.0)
+async def worktime():
+    cursor.execute("UPDATE botinfo SET worktime = worktime + 1;")
+
+
+worktime.start()
 
 
 # ready
@@ -512,12 +513,12 @@ async def botinfo(ctx):
     emb.add_field(name="ОС:", value=("```{}```".format(sys.platform)))
     emb.add_field(name="Сервера:", value=("```{}```".format(len(bot.guilds))))
     emb.add_field(name="CPU:", value=("```{}```".format(platform.processor())))
-    #cursor.execute("SELECT worktime FROM botinfo;")
-    #work = cursor.fetchall()
-    #work = work[0][0]
-    #hours = work // 60
-    #minutes = work % 60
-    #emb.add_field(name="Время работы:", value=("{} часов , {} минут".format(hours, minutes)))
+    cursor.execute("SELECT worktime FROM botinfo;")
+    work = cursor.fetchall()
+    work = work[0][0]
+    hours = work // 60
+    minutes = work % 60
+    emb.add_field(name="Время работы:", value=("```{} часов , {} минут```".format(hours, minutes)))
     await ctx.send(embed=emb)
 
 
