@@ -332,9 +332,9 @@ async def top(ctx):
         bigkey = int(elem[0])
         if bot.get_user(bigkey) is None:
             continue
-        title = title.format(counter, bot.get_user(bigkey))
-        value = value.format(biggest)
-        emb.add_field(name=title, value=value)
+        newtitle = title.format(counter, bot.get_user(bigkey))
+        newvalue = value.format(biggest)
+        emb.add_field(name=newtitle, value=newvalue)
         counter += 1
     await ctx.send(embed=emb)
 
