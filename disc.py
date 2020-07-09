@@ -61,7 +61,7 @@ async def on_ready():
                 except:
                     pass
             continue
-        if guild.system_channel == None:
+        if guild.system_channel is None:
             pass
         else:
             await guild.system_channel.send("Хей, я снова онлайн!")
@@ -88,7 +88,7 @@ async def on_ready():
 @bot.event
 async def on_message(message):
     global cursor, conn
-    if message.guild == None:
+    if message.guild is None:
         return
     if message.guild.id == 264445053596991498:
         return
@@ -284,7 +284,7 @@ async def stavka(ctx, arg: int):
 @bot.command()
 async def balans(ctx, member: discord.Member = None):
     global colors, cursor
-    if member == None:
+    if member is None:
         member = ctx.author
     emb = discord.Embed(color=random.choice(colors))
     cursor.execute(
@@ -299,7 +299,7 @@ async def balans(ctx, member: discord.Member = None):
 @bot.command()
 async def usercard(ctx, member: discord.Member = None):
     global colors, cursor, conn
-    if member == None:
+    if member is None:
         member = ctx.author
     emb = discord.Embed(color=random.choice(colors))
     cursor.execute(
@@ -317,39 +317,26 @@ async def usercard(ctx, member: discord.Member = None):
 @bot.command()
 async def top(ctx):
     global cursor
-    torr = []
-    ind2 = "Нет информации"
-    ind3 = "Нет информации"
-    ind4 = "Нет информации"
-    ind5 = "Нет информации"
+    emb = discord.Embed(color=random.choice(colors), title="Топ сервера")
+    title = "#{} - {}"
+    value = "Монеты: ```{}```"
     cursor.execute(
         "SELECT * FROM users WHERE guild_id = '{}' ORDER BY money;".format(ctx.guild.id))
     topp = cursor.fetchall()
     topp.reverse()
     counter = 0
     for elem in topp:
+        if counter >= 5:
+            break
         biggest = elem[2]
         bigkey = int(elem[0])
-        torr.append([biggest, bigkey])
-        if bot.get_user(torr[counter][1]) == None:
-            torr.pop()
+        if bot.get_user(bigkey) is None:
             continue
+        title = title.format(counter, bot.get_user(bigkey))
+        value = value.format(biggest)
+        emb.add_field(name=title, value=value)
         counter += 1
-    ind1 = (
-        "Первое место - {} - {}".format(bot.get_user(torr[0][1]), torr[0][0]))
-    if len(torr) >= 2:
-        ind2 = (
-            "Второе место - {} - {}".format(bot.get_user(torr[1][1]), torr[1][0]))
-    if len(torr) >= 3:
-        ind3 = (
-            "Третье место - {} - {}".format(bot.get_user(torr[2][1]), torr[2][0]))
-    if len(torr) >= 4:
-        ind4 = (
-            "Четвертое место - {} - {}".format(bot.get_user(torr[3][1]), torr[3][0]))
-    if len(torr) >= 5:
-        ind5 = (
-            "Пятое место - {} - {}".format(bot.get_user(torr[4][1]), torr[4][0]))
-    await ctx.send("{}\n{}\n{}\n{}\n{}".format(ind1, ind2, ind3, ind4, ind5))
+    await ctx.send(embed=emb)
 
 
 @bot.command()
@@ -377,7 +364,7 @@ async def jackpot_info(ctx):
 
 @bot.command()
 async def mine_info(ctx, member: discord.Member = None):
-    if member == None:
+    if member is None:
         member = ctx.author
     cursor.execute(
         "SELECT user_id,level,money,minemoney,points FROM users WHERE user_id = '{}' AND guild_id = '{}';".format(
@@ -431,7 +418,7 @@ async def dollar(ctx):
 async def help(ctx, arg=None):
     global colors
     emb = discord.Embed(color=random.choice(colors))
-    if arg == None:
+    if arg is None:
         emb.title = "Команды бота BuCord:"
         emb.description = "<> - обязательный аргумент , [] - необязательный аргумент"
         emb.add_field(name=".help [команда]", value="выводит это сообщение")
