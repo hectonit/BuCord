@@ -326,15 +326,15 @@ async def top(ctx):
     topp.reverse()
     counter = 0
     for elem in topp:
-        if counter >= 5:
+        if counter >= 10:
             break
         biggest = elem[2]
         bigkey = int(elem[0])
         if bot.get_user(bigkey) is None:
             continue
-        newtitle = title.format(counter, bot.get_user(bigkey))
+        newtitle = title.format(counter + 1, bot.get_user(bigkey))
         newvalue = value.format(biggest)
-        emb.add_field(name=newtitle, value=newvalue)
+        emb.add_field(name=newtitle, value=newvalue, inline=True)
         counter += 1
     await ctx.send(embed=emb)
 
