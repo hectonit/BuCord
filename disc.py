@@ -50,10 +50,8 @@ def is_moder(ctx):
 async def on_ready():
     global conn, cursor
     await bot.change_presence(activity=discord.Game(".help | {} servers".format(len(bot.guilds))))
-    all_members = 0
     for guild in bot.guilds:
-        all_members += len(guild.members)
-        if all_members >= 10000 or guild.id == 264445053596991498:
+        if len(guild.members) >= 10000 or guild.id == 264445053596991498:
             if len(guild.text_channels) <= 0:
                 pass
             else:
@@ -102,6 +100,12 @@ async def on_message(message):
         return
     if message.author.bot:
         return
+    try:
+        cursor.execute("SELECT * FROM guilds;")
+    except:
+        conn.close()
+        conn = psycopg2.connect(DATABASE_URL, sslmode="require")
+        cursor = conn.cursor()
     cursor.execute(
         "SELECT points FROM users WHERE user_id = %s AND guild_id = %s;", (
             str(message.author.id), str(message.guild.id),))
@@ -236,12 +240,12 @@ async def statuschange():
 statuschange.start()
 
 
-@tasks.loop(minutes=1.0)
-async def worktime():
-    cursor.execute("UPDATE botinfo SET worktime = worktime + 1;")
-
-
-worktime.start()
+#@tasks.loop(minutes=1.0)
+#async def worktime():
+#    cursor.execute("UPDATE botinfo SET worktime = worktime + 1;")
+#
+#
+#worktime.start()
 
 
 # ready
@@ -520,12 +524,12 @@ async def botinfo(ctx):
     emb.add_field(name="ОС:", value=("```{}```".format(sys.platform)))
     emb.add_field(name="Сервера:", value=("```{}```".format(len(bot.guilds))))
     emb.add_field(name="CPU:", value=("```{}```".format(platform.processor())))
-    cursor.execute("SELECT worktime FROM botinfo;")
-    work = cursor.fetchall()
-    work = work[0][0]
-    hours = work // 60
-    minutes = work % 60
-    emb.add_field(name="Время работы:", value=("{} часов , {} минут".format(hours, minutes)))
+    #cursor.execute("SELECT worktime FROM botinfo;")
+    #work = cursor.fetchall()
+    #work = work[0][0]
+    #hours = work // 60
+    #minutes = work % 60
+    #emb.add_field(name="Время работы:", value=("{} часов , {} минут".format(hours, minutes)))
     await ctx.send(embed=emb)
 
 
