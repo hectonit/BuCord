@@ -334,7 +334,7 @@ async def top(ctx):
             continue
         newtitle = title.format(counter + 1, bot.get_user(bigkey))
         newvalue = value.format(biggest)
-        emb.add_field(name=newtitle, value=newvalue, inline=True)
+        emb.add_field(name=newtitle, value=newvalue, inline=False)
         counter += 1
     await ctx.send(embed=emb)
 
