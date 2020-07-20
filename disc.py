@@ -446,6 +446,8 @@ async def help(ctx, arg=None):
                       value="отправляет разработчикам информацию о баге")
         emb.add_field(name=".botinfo",
                       value="выводит информацию о боте")
+        emb.add_field(name=".ping",
+                      value="выводит пинг бота")
     await ctx.send(embed=emb)
 
 
@@ -505,6 +507,14 @@ async def botinfo(ctx):
     hours = work // 60
     minutes = work % 60
     emb.add_field(name="Время работы:", value=("```{} часов , {} минут```".format(hours, minutes)))
+    await ctx.send(embed=emb)
+
+
+@bot.command()
+async def ping(ctx):
+    emb = discord.Embed(color=random.choice(colors))
+    emb.title = "Понг!"
+    emb.description = "Пинг бота составляет {} ms".format(int(bot.latency * 1000))
     await ctx.send(embed=emb)
 
 
