@@ -1,5 +1,5 @@
-discord.py
-requests
-beautifulsoup4
-psycopg2
-dblpy
+discord.py==1.3.4
+requests==2.23.0
+beautifulsoup4==4.9.0
+psycopg2==2.8.5
+dblpy==0.3.4
