@@ -137,10 +137,10 @@ async def on_member_join(member):
         return
     cursor.execute(
         "SELECT welcome FROM guilds WHERE guild_id = %s;", (str(guild.id),))
-    text = str(cursor.fetchall[0][0])
+    text = str(cursor.fetchall()[0][0])
     cursor.execute(
-        "INSERT INTO users (user_id,level,money,minemoney,points,guild_id) VALUES ('{}',{},{},{},{},'{}');".format(
-            member.id, 0, 5, 0, 0, guild.id))
+        "INSERT INTO users (user_id,level,money,minemoney,points,guild_id) VALUES (%s,%s,%s,%s,%s,%s);", (
+            str(member.id), 0, 5, 0, 0, str(guild.id)))
     conn.commit()
     await channel.send(text.format(member.mention))
 
