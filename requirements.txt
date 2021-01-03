@@ -1,0 +1,6 @@
+discord.py==1.4.1
+requests==2.24.0
+beautifulsoup4==4.9.1
+psycopg2==2.8.5
+dblpy==0.3.4
+asyncpg==0.21.0
