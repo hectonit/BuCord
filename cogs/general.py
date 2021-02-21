@@ -1,16 +1,15 @@
 """general cog"""
 import platform
-import random
 import sys
 
+import aiohttp
 import discord
-import requests
 from discord.ext import commands, tasks
 
-from constraints import colors, commands_descriptions
-from useful_commands import show_real_nick, create_loop
+from constraints import commands_descriptions, MAX_MEMBERS, MY_ID
+from useful_commands import show_real_nick, connect
 
-con = create_loop()
+con = connect()
 
 
 class Stuff(commands.Cog):
@@ -26,23 +25,21 @@ class Stuff(commands.Cog):
         """
         on_ready event
         """
-        ac_type = discord.ActivityType.listening
+        ac_type = discord.ActivityType.streaming
         name = ".help | {} servers".format(len(self.bot.guilds))
         activity = discord.Activity(name=name, type=ac_type)
         await self.bot.change_presence(activity=activity)
-        # guild check
+
         for guild in self.bot.guilds:
-            if len(guild.members) >= 10000 or guild.id == 264445053596991498:
-                if guild.system_channel is not None:
-                    try:
-                        await guild.system_channel.send(
-                            "Ваш сервер слишком велик для нашего бота для того , чтобы он работал надо задонатить!!!")
-                    except discord.Forbidden:
-                        pass
-                continue
-            guilds = await con.fetchrow("SELECT * FROM guilds WHERE guild_id = $1;", guild.id)
-            if guilds is None:
-                await con.execute("INSERT INTO guilds (guild_id) VALUES ($1);", guild.id)
+            if guild.name and guild.member_count < MAX_MEMBERS:
+                with con.cursor() as cur:
+                    guilds = cur.fetch_row("SELECT * FROM guilds WHERE guild_id = %s;", guild.id)
+                    if guilds is None:
+                        cur.execute("INSERT INTO guilds (guild_id) VALUES (%s);", (guild.id,))
+                        for member in guild.members:
+                            if not member.bot:
+                                cur.execute("INSERT INTO users (user_id,guild_id) VALUES (%s,%s);",
+                                            (member.id, guild.id))
         self.status_change.start()
         self.work_time.start()
         print("Bot logged as {}".format(self.bot.user))
@@ -57,23 +54,23 @@ class Stuff(commands.Cog):
         :return: None
         :rtype: None
         """
-        if message.guild is None or message.guild.id == 264445053596991498 or message.author.bot:
+        if message.author.bot:
             return
-        row = await con.fetchrow(
-            "SELECT level,points FROM users WHERE user_id = $1 AND guild_id = $2;",
-            message.author.id, message.guild.id)
-        points = row["points"]
-        points += 1
-        level = row["level"]
-        if points >= 100:
-            level += 1
-            points -= 100
-        await con.execute(
-            "UPDATE users SET points = $1 WHERE user_id = $2 AND guild_id = $3;", points, message.author.id,
-            message.guild.id)
-        await con.execute(
-            "UPDATE users SET level = $1 WHERE user_id = $2 AND guild_id = $3;", level, message.author.id,
-            message.guild.id)
+        with con.cursor() as cur:
+            row = cur.fetch_row("SELECT level,points FROM users WHERE user_id = %s AND guild_id = %s;",
+                                message.author.id, message.guild.id)
+            points = row["points"]
+            points += 1
+            level = row["level"]
+            if points == 100:
+                level += 1
+                points = 0
+            cur.execute(
+                "UPDATE users SET points = %s WHERE user_id = %s AND guild_id = %s;", (points, message.author.id,
+                                                                                       message.guild.id))
+            cur.execute(
+                "UPDATE users SET level = %s WHERE user_id = %s AND guild_id = %s;", (level, message.author.id,
+                                                                                      message.guild.id))
         await self.bot.process_commands(message)
 
     @commands.Cog.listener()
@@ -81,7 +78,8 @@ class Stuff(commands.Cog):
         """
         do when bot disconnect
         """
-        await con.execute("UPDATE bot_info SET work_time = 0;")
+        with con.cursor() as cur:
+            cur.execute("UPDATE bot_info SET work_time = 0;")
         print("DISCONNECTED")
 
     @tasks.loop(hours=1.0)
@@ -99,7 +97,8 @@ class Stuff(commands.Cog):
         """
         plus work_time for stuff
         """
-        await con.execute("UPDATE bot_info SET work_time = work_time + 1;")
+        with con.cursor() as cur:
+            cur.execute("UPDATE bot_info SET work_time = work_time + 1;")
 
     @commands.command()
     async def user_card(self, ctx, member: discord.Member = None):
@@ -113,12 +112,12 @@ class Stuff(commands.Cog):
         """
         if member is None:
             member = ctx.author
-        row = await con.fetchrow(
-            "SELECT level,points FROM users WHERE user_id = $1 AND guild_id = $2;",
-            ctx.author.id, ctx.guild.id)
+        with con.cursor() as cur:
+            row = cur.fetch_row("SELECT level,points FROM users WHERE user_id = %s AND guild_id = %s;",
+                                ctx.author.id, ctx.guild.id)
         level = row["level"]
         points = row["points"]
-        emb = discord.Embed(color=random.choice(colors))
+        emb = discord.Embed(color=discord.Colour.random())
         emb.set_thumbnail(url=member.avatar_url)
         emb.title = "Профиль участника {}".format(show_real_nick(member))
         emb.add_field(name="Уровень", value=level)
@@ -126,17 +125,20 @@ class Stuff(commands.Cog):
         await ctx.send(embed=emb)
 
     @commands.command()
-    async def dollar(self, ctx):
+    async def course(self, ctx, valute="USD"):
         """
         shows course of dollar
 
+        :param valute: abbreviation of valute
+        :type valute: str
         :param ctx: context
         :type ctx: commands.Context
         """
-        r = requests.get("https://www.cbr-xml-daily.ru/daily_json.js")
-        course = r.json()
-        course = course["Valute"]["USD"]["Value"]
-        await ctx.send("Курс доллара: {} рублей".format(course))
+        async with aiohttp.ClientSession as session:
+            async with session.get("https://www.cbr-xml-daily.ru/daily_json.js") as response:
+                json = await response.json()
+                course = json["Valute"][valute]["Value"]
+        await ctx.send("Курс {}: {} рублей".format(valute, course))
 
     @commands.command(name="bot_info")
     async def info_bot_com(self, ctx):
@@ -146,11 +148,12 @@ class Stuff(commands.Cog):
         :param ctx: context
         :type ctx: commands.Context
         """
-        emb = discord.Embed(color=random.choice(colors))
+        emb = discord.Embed(color=discord.Colour.random())
         emb.add_field(name="ОС:", value="```{}```".format(sys.platform))
         emb.add_field(name="Сервера:", value="```{}```".format(len(self.bot.guilds)))
         emb.add_field(name="CPU:", value="```{}```".format(platform.processor()))
-        work = await con.fetchval("SELECT work_time FROM bot_info;")
+        with con.cursor() as cur:
+            work = cur.fetch_val("SELECT work_time FROM bot_info;")
         hours = work // 60
         minutes = work % 60
         emb.add_field(name="Время работы:", value=("```{} часов , {} минут```".format(hours, minutes)))
@@ -164,9 +167,9 @@ class Stuff(commands.Cog):
         :param ctx: context
         :type ctx: commands.Context
         """
-        emb = discord.Embed(color=random.choice(colors))
+        emb = discord.Embed(color=discord.Colour.random())
         emb.title = "Понг!"
-        emb.description = "Пинг бота составляет {} ms".format(int(self.bot.latency * 1000))
+        emb.description = "Пинг бота составляет {} ms".format(self.bot.latency * 1000)
         await ctx.send(embed=emb)
 
 
@@ -186,21 +189,17 @@ class Other(commands.Cog):
         :param guild: guild what bot join
         :type guild: discord.Guild
         """
-        user_id = 530751275663491092
-        user = self.bot.get_user(user_id)
-        emb = discord.Embed(color=random.choice(colors))
-        emb.title = "У нас новый сервер !!!"
-        emb.description = "Название сервера: {}".format(guild.name)
-        emb.set_image(url=guild.icon)
-        await user.send(embed=emb)
+        with con.cursor() as cur:
+            cur.execute("INSERT INTO guilds (guild_id) VALUES (%s);", (guild.id,))
+            for member in guild.members:
+                cur.execute("INSERT INTO users (user_id,guild_id) VALUES (%s,%s);", (member.id, guild.id))
         channel = guild.system_channel
         please = "Пожалуйста настройте бота!!!\n"
         advice = "Введите .help и просмотрите комнады в секции 'модерация'\n"
-        some = "Надеюсь бот вам понравится!\n"
+        hope = "Надеюсь бот вам понравится!\n"
         support = "SUPPORT email: progcuber@gmail.com"
-        emb = discord.Embed(color=random.choice(colors),
-                            description=please + advice + some + support)
-        await con.execute("INSERT INTO guilds (guild_id) VALUES ($1);", guild.id)
+        emb = discord.Embed(color=discord.Colour.random(),
+                            description=please + advice + hope + support)
         await channel.send(embed=emb)
 
     @commands.Cog.listener()
@@ -213,7 +212,8 @@ class Other(commands.Cog):
         """
         channel = guild.owner
         await channel.send("Эхххх....Жаль , что я вам не пригодился....\nP.S. Все данные удаляются")
-        await con.execute("DELETE FROM guilds WHERE guild_id = $1;", guild.id)
+        with con.cursor() as cur:
+            cur.execute("DELETE FROM guilds WHERE guild_id = $1;", (guild.id,))
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -222,18 +222,16 @@ class Other(commands.Cog):
 
         :param member: member who join
         :type member: discord.Member
-        :return: None
-        :rtype: None
         """
+        if member.bot:
+            return
         guild = member.guild
         channel = guild.system_channel
-        if guild.id == 264445053596991498:
-            return
-        text = await con.fetchval(
-            "SELECT welcome FROM guilds WHERE guild_id = $1;", guild.id)
-        await con.execute(
-            "INSERT INTO users (user_id,guild_id) VALUES ($1,$2);",
-            member.id, guild.id)
+        with con.cursor() as cur:
+            text = cur.fetch_val("SELECT welcome FROM guilds WHERE guild_id = %s;", guild.id)
+            cur.execute(
+                "INSERT INTO users (user_id,guild_id) VALUES (%s,%s);",
+                (member.id, guild.id))
         if channel is not None:
             await channel.send(text.format(member.mention))
 
@@ -244,17 +242,15 @@ class Other(commands.Cog):
 
         :param member: member who leave
         :type member: discord.Member
-        :return: None
-        :rtype: None
         """
+        if member.bot:
+            return
         guild = member.guild
         channel = guild.system_channel
-        if guild.id == 264445053596991498:
-            return
-        text = await con.fetchval(
-            "SELECT goodbye FROM guilds WHERE guild_id = $1;", guild.id)
-        await con.execute("DELETE FROM users WHERE user_id = $1 AND guild_id = $2;",
-                          member.id, guild.id)
+        with con.cursor() as cur:
+            text = cur.fetch_val("SELECT goodbye FROM guilds WHERE guild_id = %s;", guild.id)
+            cur.execute("DELETE FROM users WHERE user_id = %s AND guild_id = %s;",
+                        (member.id, guild.id))
         if channel is not None:
             await channel.send(text.format(show_real_nick(member)))
 
@@ -268,15 +264,15 @@ class Other(commands.Cog):
         :param error: error that occurred
         :type error: Exception
         """
-        prefix = await con.fetchval("SELECT prefix FROM guilds WHERE guild_id = $1", ctx.guild.id)
+        with con.cursor() as cur:
+            prefix = cur.fetch_val("SELECT prefix FROM guilds WHERE guild_id = %s", ctx.guild.id)
         if isinstance(error, discord.ext.commands.CommandNotFound):
             await ctx.send("Данная команда не найдена. Прочитайте **{}help** , возможно вы ошиблись.".format(prefix))
         elif isinstance(error, discord.ext.commands.MissingRequiredArgument):
             await ctx.send(
                 "Вы не задали необходимые аргументы. Прочитайте **{}help** , возможно вы ошиблись.".format(prefix))
         else:
-            user_id = 530751275663491092
-            user = self.bot.get_user(user_id)
+            user = self.bot.get_user(MY_ID)
             await user.send(
                 "Произошла ошибка:\n{}\nСервер:{}\nСообщение:{}".format(error, ctx.guild, ctx.message.content))
             await ctx.send("Произошла неожиданная ошибка, информация для дебага уже отправлена разработчикам.")
@@ -291,10 +287,11 @@ class Other(commands.Cog):
         :param command_name: name to output only one type of commands
         :type command_name: str
         """
-        prefix = await con.fetchval("SELECT prefix FROM guilds WHERE guild_id = $1;", ctx.guild.id)
+        with con.cursor() as cur:
+            prefix = cur.fetch_val("SELECT prefix FROM guilds WHERE guild_id = %s;", ctx.guild.id)
         base_command = "Чтобы увидеть информацию об определенной команде пишите {}help `команда`".format(prefix)
         base_section = "Чтобы увидеть информацию об определенной секции пишите {}help `секция`".format(prefix)
-        emb = discord.Embed(color=random.choice(colors))
+        emb = discord.Embed(color=discord.Colour.random())
         if command_name is None:
             emb.title = "Секции команд бота BuCord:"
             emb.description = "`модерация`,`экономика`,`общее`"
@@ -305,11 +302,11 @@ class Other(commands.Cog):
             emb.set_footer(text=base_command)
         elif command_name == "экономика":
             emb.title = "Команды для экономики"
-            emb.description = "`balance`,`mine_info`,`withdrawal`,`bet`,`top`"
+            emb.description = "`balance`,`bet`,`top`"
             emb.set_footer(text=base_command)
         elif command_name == "общее":
             emb.title = "Общие команды"
-            emb.description = "`dollar`,`user_card`,`find_bug`,`bot_info`,`ping`, `help`"
+            emb.description = "`course`,`user_card`,`find_bug`,`bot_info`,`ping`, `help`"
             emb.set_footer(text=base_command)
         else:
             emb.title = "Команда {}".format(command_name)
@@ -333,9 +330,8 @@ class Other(commands.Cog):
         :param image_url: url of image of bug
         :type image_url: str
         """
-        user_id = 530751275663491092
-        user = self.bot.get_user(user_id)
-        emb = discord.Embed(title=title, description=description)
+        user = self.bot.get_user(MY_ID)
+        emb = discord.Embed(title=title, description=description, color=discord.Colour.random())
         if image_url is not None:
             emb.set_image(url=image_url)
         emb.set_author(name=ctx.author)

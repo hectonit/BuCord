@@ -11,19 +11,16 @@ else:
     DBL_TOKEN = configs.dbltoken
     DATABASE_URL = configs.database
     BOT_TOKEN = configs.token
-colors = [0x9b59b6, 0x1abc9c, 0x2ecc71, 0x3498db,
-          0x34495e, 0x16a085, 0x27ae60, 0x2980b9, 0x8e44ad, 0x2c3e50,
-          0xf1c40f, 0xe67e22, 0xe74c3c, 0xecf0f1,
-          0x95a5a6, 0xf39c12, 0xd35400, 0xc0392b, 0xbdc3c7, 0x7f8c8d
-          ]
+MAX_MEMBERS = 10000
+MY_ID = 530751275663491092
 commands_descriptions = {
     "help": {
         "info": "выводит справку по командам",
         "use": "{}help [команда или секция]",
     },
-    "dollar": {
-        "info": "выводит курс доллара к рублю",
-        "use": "{}dollar",
+    "course": {
+        "info": "выводит курс какой-либо валюты (доллар по умолчанию) к рублю",
+        "use": "{}course [обозначение валюты например: USD (доллар)]",
     },
     "balance": {
         "info": "выводит баланс участника",
@@ -32,14 +29,6 @@ commands_descriptions = {
     "give": {
         "info": "добавляет участнику указанное кол-во монет(только для модераторов)",
         "use": "{}give <учатсник сервера> <монеты>",
-    },
-    "mine_info": {
-        "info": "выводит кол-во намайненых монет участника",
-        "use": "{}mine_info [участник сервера]",
-    },
-    "withdrawal": {
-        "info": "выводит монеты с майнинга на баланс",
-        "use": "{}withdrawal <монеты>",
     },
     "bet": {
         "info": "вы ставите монеты(принцип как в казино)",

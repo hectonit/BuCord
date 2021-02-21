@@ -1,11 +1,13 @@
 """main file to start bot"""
+
 import dbl
+import discord
 from discord.ext import commands
 
 from constraints import BOT_TOKEN, DBL_TOKEN
-from useful_commands import create_loop
+from useful_commands import connect
 
-con = create_loop()
+con = connect()
 
 
 async def dynamic_prefix(pref_bot, message):
@@ -23,11 +25,13 @@ async def dynamic_prefix(pref_bot, message):
     if guild is None:
         return await pref_bot.get_prefix(message)
     else:
-        prefix = await con.fetchval("SELECT prefix FROM guilds WHERE guild_id = $1", guild.id)
+        with con.cursor() as cur:
+            prefix = cur.fetch_val("SELECT prefix FROM guilds WHERE guild_id = %s", guild.id)
         return prefix
 
 
-bot = commands.Bot(command_prefix=dynamic_prefix)
+intents = discord.Intents.all()
+bot = commands.Bot(command_prefix=dynamic_prefix, intents=intents)
 bot.remove_command("help")
 bot.load_extension("cogs.general")
 bot.load_extension("cogs.economy")

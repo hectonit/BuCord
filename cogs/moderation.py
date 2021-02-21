@@ -1,11 +1,10 @@
 """moderation cog"""
-
 import discord
 from discord.ext import commands
 
-from useful_commands import is_moder, create_loop
+from useful_commands import connect
 
-con = create_loop()
+con = connect()
 
 
 class BotChange(commands.Cog):
@@ -17,7 +16,7 @@ class BotChange(commands.Cog):
         self.bot = bot
 
     @commands.command()
-    @is_moder()
+    @commands.has_permissions(administrator=True)
     async def change_prefix(self, ctx, prefix="."):
         """
         changes bot prefix
@@ -27,8 +26,9 @@ class BotChange(commands.Cog):
         :param prefix: prefix to change
         :type prefix: str
         """
-        old_prefix = await con.fetchval("SELECT prefix FROM guilds WHERE guild_id = $1;", ctx.guild.id)
-        await con.execute("UPDATE guilds SET prefix = $1 WHERE guild_id = $2;", prefix, ctx.guild.id)
+        with con.cursor() as cur:
+            old_prefix = cur.fetch_val("SELECT prefix FROM guilds WHERE guild_id = %s;", ctx.guild.id)
+            cur.execute("UPDATE guilds SET prefix = %s WHERE guild_id = %s;", (prefix, ctx.guild.id))
         emb = discord.Embed(color=0x2ecc71)
         emb.title = "Обновление!!!"
         emb.add_field(name="Новый префикс!", value="Префикс успешно изменен с {} на {}".format(old_prefix, prefix))
@@ -36,7 +36,7 @@ class BotChange(commands.Cog):
         await ctx.send(embed=emb)
 
     @commands.command()
-    @is_moder()
+    @commands.has_permissions(administrator=True)
     async def goodbye(self, ctx, text):
         """
         set goodbye text
@@ -46,12 +46,13 @@ class BotChange(commands.Cog):
         :param text: new goodbye text
         :type text: str
         """
-        await con.execute(
-            "UPDATE guilds SET goodbye = $1 WHERE guild_id = $2;", text, ctx.guild.id)
+        with con.cursor() as cur:
+            cur.execute(
+                "UPDATE guilds SET goodbye = %s WHERE guild_id = %s;", (text, ctx.guild.id))
         await ctx.send("Прощание успешно изменено.")
 
     @commands.command()
-    @is_moder()
+    @commands.has_permissions(administrator=True)
     async def welcome(self, ctx, text):
         """
         set welcome text
@@ -61,8 +62,9 @@ class BotChange(commands.Cog):
         :param text: new welcome text
         :type text: str
         """
-        await con.execute(
-            "UPDATE guilds SET welcome = $1 WHERE guild_id = $2;", text, ctx.guild.id)
+        with con.cursor() as cur:
+            cur.execute(
+                "UPDATE guilds SET welcome = %s WHERE guild_id = %s;", (text, ctx.guild.id))
         await ctx.send("Приветствие успешно изменено.")
 
 
@@ -75,7 +77,7 @@ class UserChange(commands.Cog):
         self.bot = bot
 
     @commands.command()
-    @is_moder()
+    @commands.has_permissions(administrator=True)
     async def give(self, ctx, member: discord.Member, money):
         """
 
@@ -87,9 +89,10 @@ class UserChange(commands.Cog):
         :type money: int
         """
         money = int(money)
-        await con.execute("UPDATE users SET money = money+$1 WHERE user_id = $2 AND guild_id = $3;", money,
-                          member.id,
-                          ctx.guild.id)
+        with con.cursor() as cur:
+            cur.execute("UPDATE users SET money = money+$1 WHERE user_id = %s AND guild_id = %s;", (money,
+                        member.id,
+                        ctx.guild.id))
         await ctx.send("{} вам выдано {} монет".format(member.mention, money))
 
 
