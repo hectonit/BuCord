@@ -71,6 +71,9 @@ class Stuff(commands.Cog):
             cur.execute(
                 "UPDATE users SET level = %s WHERE user_id = %s AND guild_id = %s;", (level, message.author.id,
                                                                                       message.guild.id))
+            cur.execute(
+                "UPDATE users SET money = money + 1 WHERE user_id = %s AND guild_id = %s;", (message.author.id,
+                                                                                             message.guild.id))
         await self.bot.process_commands(message)
 
     @commands.Cog.listener()

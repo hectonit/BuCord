@@ -33,23 +33,6 @@ class General(commands.Cog):
                     cur.execute("DELETE FROM users WHERE user_id = %s AND guild_id = %s;", (member.id,
                                                                                             member.guild.id))
 
-    @commands.Cog.listener()
-    async def on_message(self, message):
-        """
-        update member balance on each message
-
-        :param message: message from member
-        :type message: discord.Message
-        :return: None
-        :rtype: None
-        """
-        if message.guild is None or message.author.bot:
-            return
-        with con.cursor() as cur:
-            cur.execute(
-                "UPDATE users SET money = money + 1 WHERE user_id = %s AND guild_id = %s;", (message.author.id,
-                                                                                             message.guild.id))
-
     @commands.command()
     async def balance(self, ctx, member: discord.Member = None):
         """
