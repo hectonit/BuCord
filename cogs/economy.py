@@ -17,22 +17,6 @@ class General(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.Cog.listener()
-    async def on_ready(self):
-        """
-        on_ready event, check members
-        """
-        for member in self.bot.get_all_members():
-            if member.bot:
-                continue
-            with con.cursor() as cur:
-                record = cur.fetch_row("SELECT * FROM users WHERE user_id = %s AND guild_id = %s;", member.id,
-                                       member.guild.id)
-                is_member = self.bot.get_user(record["user_id"])
-                if is_member is None:
-                    cur.execute("DELETE FROM users WHERE user_id = %s AND guild_id = %s;", (member.id,
-                                                                                            member.guild.id))
-
     @commands.command()
     async def balance(self, ctx, member: discord.Member = None):
         """
@@ -116,9 +100,9 @@ class Casino(commands.Cog):
                     money, multi, final_result))
                 await ctx.send(embed=emb)
             cur.execute(
-                "UPDATE users SET money = %s WHERE user_id = %s AND guild_id = %s;", (final_finance,
+                "UPDATE users SET money = %s WHERE user_id = %s AND guild_id = %s;", final_finance,
                                                                                       ctx.author.id,
-                                                                                      ctx.guild.id))
+                                                                                      ctx.guild.id)
 
 
 def setup(bot):

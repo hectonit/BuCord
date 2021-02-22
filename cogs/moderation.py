@@ -28,7 +28,7 @@ class BotChange(commands.Cog):
         """
         with con.cursor() as cur:
             old_prefix = cur.fetch_val("SELECT prefix FROM guilds WHERE guild_id = %s;", ctx.guild.id)
-            cur.execute("UPDATE guilds SET prefix = %s WHERE guild_id = %s;", (prefix, ctx.guild.id))
+            cur.execute("UPDATE guilds SET prefix = %s WHERE guild_id = %s;", prefix, ctx.guild.id)
         emb = discord.Embed(color=0x2ecc71)
         emb.title = "Обновление!!!"
         emb.add_field(name="Новый префикс!", value="Префикс успешно изменен с {} на {}".format(old_prefix, prefix))
@@ -48,7 +48,7 @@ class BotChange(commands.Cog):
         """
         with con.cursor() as cur:
             cur.execute(
-                "UPDATE guilds SET goodbye = %s WHERE guild_id = %s;", (text, ctx.guild.id))
+                "UPDATE guilds SET goodbye = %s WHERE guild_id = %s;", text, ctx.guild.id)
         await ctx.send("Прощание успешно изменено.")
 
     @commands.command()
@@ -64,7 +64,7 @@ class BotChange(commands.Cog):
         """
         with con.cursor() as cur:
             cur.execute(
-                "UPDATE guilds SET welcome = %s WHERE guild_id = %s;", (text, ctx.guild.id))
+                "UPDATE guilds SET welcome = %s WHERE guild_id = %s;", text, ctx.guild.id)
         await ctx.send("Приветствие успешно изменено.")
 
 
@@ -90,9 +90,9 @@ class UserChange(commands.Cog):
         """
         money = int(money)
         with con.cursor() as cur:
-            cur.execute("UPDATE users SET money = money+$1 WHERE user_id = %s AND guild_id = %s;", (money,
+            cur.execute("UPDATE users SET money = money+%s WHERE user_id = %s AND guild_id = %s;", money,
                         member.id,
-                        ctx.guild.id))
+                        ctx.guild.id)
         await ctx.send("{} вам выдано {} монет".format(member.mention, money))
 
 

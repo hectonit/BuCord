@@ -35,11 +35,18 @@ class Stuff(commands.Cog):
                 with con.cursor() as cur:
                     guilds = cur.fetch_row("SELECT * FROM guilds WHERE guild_id = %s;", guild.id)
                     if guilds is None:
-                        cur.execute("INSERT INTO guilds (guild_id) VALUES (%s);", (guild.id,))
+                        cur.execute("INSERT INTO guilds (guild_id) VALUES (%s);", guild.id)
                         for member in guild.members:
                             if not member.bot:
                                 cur.execute("INSERT INTO users (user_id,guild_id) VALUES (%s,%s);",
-                                            (member.id, guild.id))
+                                            member.id, guild.id)
+        with con.cursor() as cur:
+            members = cur.fetch("SELECT * FROM users;")
+            for row in members:
+                is_member = self.bot.get_user(row["user_id"])
+                if is_member is None:
+                    cur.execute("DELETE FROM users WHERE user_id = %s AND guild_id = %s;", row["user_id"],
+                                row["guild_id"])
         self.status_change.start()
         self.work_time.start()
         print("Bot logged as {}".format(self.bot.user))
@@ -137,7 +144,7 @@ class Stuff(commands.Cog):
         :param ctx: context
         :type ctx: commands.Context
         """
-        async with aiohttp.ClientSession as session:
+        async with aiohttp.ClientSession() as session:
             async with session.get("https://www.cbr-xml-daily.ru/daily_json.js") as response:
                 json = await response.json()
                 course = json["Valute"][valute]["Value"]
@@ -253,7 +260,7 @@ class Other(commands.Cog):
         with con.cursor() as cur:
             text = cur.fetch_val("SELECT goodbye FROM guilds WHERE guild_id = %s;", guild.id)
             cur.execute("DELETE FROM users WHERE user_id = %s AND guild_id = %s;",
-                        (member.id, guild.id))
+                        member.id, guild.id)
         if channel is not None:
             await channel.send(text.format(show_real_nick(member)))
 

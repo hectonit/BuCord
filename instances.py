@@ -4,6 +4,7 @@ import psycopg2
 
 class Cursor(psycopg2.extensions.cursor):
     """my db cursor class"""
+    sys_execute = psycopg2.extensions.cursor.execute
 
     def fetch(self, query, *args):
         """
@@ -16,7 +17,7 @@ class Cursor(psycopg2.extensions.cursor):
         :return: list of record objects
         :rtype: list
         """
-        self.execute(query, args)
+        self.sys_execute(query, args)
         description = self.description
         rows = self.fetchall()
         return [Record(record, description) for record in rows] if rows else None
@@ -32,7 +33,7 @@ class Cursor(psycopg2.extensions.cursor):
         :return: one record
         :rtype: Record
         """
-        self.execute(query, args)
+        self.sys_execute(query, args)
         description = self.description
         row = self.fetchone()
         return Record(row, description) if row else None
@@ -50,9 +51,20 @@ class Cursor(psycopg2.extensions.cursor):
         :return: value from column
         :rtype: all
         """
-        self.execute(query, args)
+        self.sys_execute(query, args)
         row = self.fetchone()
         return row[column] if row else None
+
+    def execute(self, query, *args):
+        """
+
+        :param query: sql code
+        :type query: str
+        :param args: params to insert in sql code
+        :type args: all when str() available
+        """
+        print(args)
+        self.sys_execute(query, args)
 
 
 class Record:
