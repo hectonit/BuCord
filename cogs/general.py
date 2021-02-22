@@ -73,15 +73,14 @@ class Stuff(commands.Cog):
                 level += 1
                 points = 0
             cur.execute(
-                "UPDATE users SET points = %s WHERE user_id = %s AND guild_id = %s;", (points, message.author.id,
-                                                                                       message.guild.id))
+                "UPDATE users SET points = %s WHERE user_id = %s AND guild_id = %s;", points, message.author.id,
+                message.guild.id)
             cur.execute(
-                "UPDATE users SET level = %s WHERE user_id = %s AND guild_id = %s;", (level, message.author.id,
-                                                                                      message.guild.id))
+                "UPDATE users SET level = %s WHERE user_id = %s AND guild_id = %s;", level, message.author.id,
+                message.guild.id)
             cur.execute(
-                "UPDATE users SET money = money + 1 WHERE user_id = %s AND guild_id = %s;", (message.author.id,
-                                                                                             message.guild.id))
-        await self.bot.process_commands(message)
+                "UPDATE users SET money = money + 1 WHERE user_id = %s AND guild_id = %s;", message.author.id,
+                message.guild.id)
 
     @commands.Cog.listener()
     async def on_disconnect(self):
@@ -146,9 +145,9 @@ class Stuff(commands.Cog):
         """
         async with aiohttp.ClientSession() as session:
             async with session.get("https://www.cbr-xml-daily.ru/daily_json.js") as response:
-                json = await response.json()
-                course = json["Valute"][valute]["Value"]
-        await ctx.send("Курс {}: {} рублей".format(valute, course))
+                json = await response.json(content_type="application/javascript")
+                course = json["Valute"][valute]["Value"] / json["Valute"][valute]["Nominal"]
+        await ctx.send("Курс {}: {} рублей".format(json["Valute"][valute]["Name"], course))
 
     @commands.command(name="bot_info")
     async def info_bot_com(self, ctx):

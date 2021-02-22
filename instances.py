@@ -63,7 +63,6 @@ class Cursor(psycopg2.extensions.cursor):
         :param args: params to insert in sql code
         :type args: all when str() available
         """
-        print(args)
         self.sys_execute(query, args)
 
 
