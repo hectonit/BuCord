@@ -281,10 +281,7 @@ class Other(commands.Cog):
             await ctx.send(
                 "Вы не задали необходимые аргументы. Прочитайте **{}help** , возможно вы ошиблись.".format(prefix))
         else:
-            user = self.bot.get_user(MY_ID)
-            await user.send(
-                "Произошла ошибка:\n{}\nСервер:{}\nСообщение:{}".format(error, ctx.guild, ctx.message.content))
-            await ctx.send("Произошла неожиданная ошибка, информация для дебага уже отправлена разработчикам.")
+            await ctx.send("Произошла неожиданная ошибка")
 
     @commands.command(name="help")
     async def help_(self, ctx, command_name=None):
