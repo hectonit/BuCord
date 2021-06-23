@@ -26,21 +26,25 @@ class BotChange(commands.Cog):
         :param prefix: prefix to change
         :type prefix: str
         """
+        with con.cursor() as cur:
+            old_prefix = cur.fetch_val("SELECT prefix FROM guilds WHERE guild_id = %s;", ctx.guild.id)
         try:
             prefix.encode("ascii")
         except UnicodeEncodeError:
-            ctx.send("Можно адекватный префикс?")
+            emb = discord.Embed(color=0xf55c47)
+            emb.title = "Ошибка"
+            emb.add_field(name="Префикс не изменен!", value="Префикс может содержать только ascii символы")
+            emb.set_footer(text="Пример команды: {}help".format(old_prefix))
+            await ctx.send(embed=emb)
             return
         if len(prefix) > 5:
             emb = discord.Embed(color=0xf55c47)
             emb.title = "Ошибка"
             emb.add_field(name="Префикс не изменен!", value="Длина префикса не может превышать 5 символов")
-            with con.cursor() as cur:
-                old_prefix = cur.fetch_val("SELECT prefix FROM guilds WHERE guild_id = %s;", ctx.guild.id)
+            emb.set_footer(text="Пример команды: {}help".format(old_prefix))
             await ctx.send(embed=emb)
             return
         with con.cursor() as cur:
-            old_prefix = cur.fetch_val("SELECT prefix FROM guilds WHERE guild_id = %s;", ctx.guild.id)
             cur.execute("UPDATE guilds SET prefix = %s WHERE guild_id = %s;", prefix, ctx.guild.id)
         emb = discord.Embed(color=0x2ecc71)
         emb.title = "Обновление"
