@@ -36,10 +36,11 @@ class Stuff(commands.Cog):
                     guilds = cur.fetch_row("SELECT * FROM guilds WHERE guild_id = %s;", guild.id)
                     if guilds is None:
                         cur.execute("INSERT INTO guilds (guild_id) VALUES (%s);", guild.id)
-                        for member in guild.members:
-                            if not member.bot:
-                                cur.execute("INSERT INTO users (user_id,guild_id) VALUES (%s,%s);",
-                                            member.id, guild.id)
+                    for member in guild.members:
+                        user = cur.fetch_row("SELECT * FROM users WHERE guild_id = %s AND user_id = %s;", guild.id, member.id)
+                        if not member.bot and user is None:
+                            cur.execute("INSERT INTO users (user_id,guild_id) VALUES (%s,%s);",
+                                        member.id, guild.id)
         with con.cursor() as cur:
             members = cur.fetch("SELECT * FROM users;")
             for row in members:
