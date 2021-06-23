@@ -322,7 +322,7 @@ class Other(commands.Cog):
             emb.title = "Команда {}".format(command_name)
             command = commands_descriptions[command_name]
             emb.description = command["info"]
-            emb.add_field(name="Использование:", value=command["use"].format(prefix))
+            emb.add_field(name="Использование:", value=prefix + command["use"])
             emb.set_footer(text="<аргумент> - обязательный аргумент , [аргумент] - необязательный аргумент")
         await ctx.send(embed=emb)
 
