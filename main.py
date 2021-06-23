@@ -27,7 +27,7 @@ async def dynamic_prefix(pref_bot, message):
     else:
         with con.cursor() as cur:
             prefix = cur.fetch_val("SELECT prefix FROM guilds WHERE guild_id = %s", guild.id)
-        return prefix
+        return commands.when_mentioned_or(prefix)(pref_bot, message)
 
 
 intents = discord.Intents.all()
