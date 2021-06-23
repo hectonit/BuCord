@@ -146,7 +146,11 @@ class Stuff(commands.Cog):
         async with aiohttp.ClientSession() as session:
             async with session.get("https://www.cbr-xml-daily.ru/daily_json.js") as response:
                 json = await response.json(content_type="application/javascript")
-                course = json["Valute"][valute]["Value"] / json["Valute"][valute]["Nominal"]
+                try:
+                    course = json["Valute"][valute]["Value"] / json["Valute"][valute]["Nominal"]
+                except KeyError:
+                    await ctx.send("Неверный код валюты")
+                    return
         await ctx.send("Курс {}: {} рублей".format(json["Valute"][valute]["Name"], course))
 
     @commands.command(name="bot_info")
