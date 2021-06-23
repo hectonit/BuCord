@@ -29,8 +29,9 @@ class BotChange(commands.Cog):
         if len(prefix) > 5:
             emb = discord.Embed(color=0xf55c47)
             emb.title = "Ошибка"
-            emb.add_field(name="Префикс не изменен!", value="Длина префикса не может превышать 5 символов");
-            old_prefix = cur.fetch_val("SELECT prefix FROM guilds WHERE guild_id = %s;", ctx.guild.id);
+            emb.add_field(name="Префикс не изменен!", value="Длина префикса не может превышать 5 символов")
+            with con.cursor() as cur:
+                old_prefix = cur.fetch_val("SELECT prefix FROM guilds WHERE guild_id = %s;", ctx.guild.id)
             await ctx.send(embed=emb)
             return
         with con.cursor() as cur:
