@@ -320,7 +320,11 @@ class Other(commands.Cog):
             emb.set_footer(text=base_command)
         else:
             emb.title = "Команда {}".format(command_name)
-            command = commands_descriptions[command_name]
+            try:
+                command = commands_descriptions[command_name]
+            except KeyError:
+                await ctx.send("Команда не найдена")
+                return
             emb.description = command["info"]
             emb.add_field(name="Использование:", value=prefix + command["use"])
             emb.set_footer(text="<аргумент> - обязательный аргумент , [аргумент] - необязательный аргумент")
