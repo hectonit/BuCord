@@ -26,6 +26,11 @@ class BotChange(commands.Cog):
         :param prefix: prefix to change
         :type prefix: str
         """
+        try:
+            prefix.encode("ascii")
+        except UnicodeEncodeError:
+            ctx.send("Можно адекватный префикс?")
+            return
         if len(prefix) > 5:
             emb = discord.Embed(color=0xf55c47)
             emb.title = "Ошибка"
