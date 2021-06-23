@@ -54,7 +54,7 @@ class BotChange(commands.Cog):
 
     @commands.command()
     @commands.has_permissions(administrator=True)
-    async def goodbye(self, ctx, text):
+    async def goodbye(self, ctx, *text):
         """
         set goodbye text
 
@@ -70,7 +70,7 @@ class BotChange(commands.Cog):
 
     @commands.command()
     @commands.has_permissions(administrator=True)
-    async def welcome(self, ctx, text):
+    async def welcome(self, ctx, *text):
         """
         set welcome text
 
