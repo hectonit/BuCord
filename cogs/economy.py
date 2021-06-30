@@ -82,7 +82,11 @@ class Casino(commands.Cog):
         with con.cursor() as cur:
             user_finance = cur.fetch_val("SELECT money FROM users WHERE user_id = %s AND guild_id = %s;",
                                          ctx.author.id, ctx.guild.id)
-            money = int(money)
+            if money.isdigit():
+                money = int(money)
+            else:
+                await ctx.send("Введите число.")
+                return
             if money > user_finance or money <= 0:
                 await ctx.send("Число введено неверно.")
                 return
