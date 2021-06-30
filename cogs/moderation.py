@@ -112,7 +112,7 @@ class UserChange(commands.Cog):
             return
         with con.cursor() as cur:
             prev_money = cor.fetch_val("SELECT money FROM user WHERE user_id = %s AND guil_id = %s;", member.id, ctx.guild.id)
-            if -2147483648 <= final_finance <= 2147483649:
+            if -2147483648 <= prev_money + money <= 2147483649:
                 cur.execute("UPDATE users SET money = %s WHERE user_id = %s AND guild_id = %s;", prev_money + money,
                         member.id,
                         ctx.guild.id)
