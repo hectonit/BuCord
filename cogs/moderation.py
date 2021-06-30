@@ -105,12 +105,20 @@ class UserChange(commands.Cog):
         :param money: money to give
         :type money: int
         """
-        money = int(money)
+        if money.isdigit() or (money[1:].isdigit() and money[0] == "-"):
+            money = int(money)
+        else:
+            await ctx.send("Введите число.")
+            return
         with con.cursor() as cur:
-            cur.execute("UPDATE users SET money = money+%s WHERE user_id = %s AND guild_id = %s;", money,
+            prev_money = cor.fetch_val("SELECT money FROM user WHERE user_id = %s AND guil_id = %s;", member.id, ctx.guild.id)
+            if -2147483648 <= final_finance <= 2147483649:
+                cur.execute("UPDATE users SET money = %s WHERE user_id = %s AND guild_id = %s;", prev_money + money,
                         member.id,
                         ctx.guild.id)
-        await ctx.send("{} вам выдано {} монет".format(member.mention, money))
+                await ctx.send("{} вам выдано {} монет".format(member.mention, money))
+            else:
+                await ctx.send("Образовались слишком большие числа :(")
 
 
 def setup(bot):

@@ -105,10 +105,13 @@ class Casino(commands.Cog):
                 emb.title = ("Ставка: {}$\nМножитель: {}\nВыигрыш: {}$".format(
                     money, multi, final_result))
                 await ctx.send(embed=emb)
-            cur.execute(
-                "UPDATE users SET money = %s WHERE user_id = %s AND guild_id = %s;", final_finance,
-                                                                                      ctx.author.id,
-                                                                                      ctx.guild.id)
+            if -2147483648 <= final_finance <= 2147483649:
+                cur.execute(
+                    "UPDATE users SET money = %s WHERE user_id = %s AND guild_id = %s;", final_finance,
+                                                                                         ctx.author.id,
+                                                                                         ctx.guild.id)
+            else:
+                await ctx.send("Образовались слишком большие числа :(")
 
 
 def setup(bot):
