@@ -13,6 +13,7 @@ else:
     BOT_TOKEN = configs.token
 MAX_MEMBERS = 10000
 MY_ID = 530751275663491092
+table = "+---+---+---+\n| 1 | 2 | 3 |\n+---+---+---+\n| 4 | 5 | 6 |\n+---+---+---+\n| 7 | 8 | 9 |\n+---+---+---+"
 commands_descriptions = {
     "help": {
         "info": "выводит справку по командам",
@@ -65,5 +66,9 @@ commands_descriptions = {
     "change_prefix": {
         "info": "изменяет префикс бота",
         "use": "change_prefix [префикс]",
+    },
+    "tictactoe": {
+        "info": "известная игра крестики-нолики",
+        "use": "tictactoe [уровень сложности `easy`, `medium` или `hard`, по умолчанию medium]",
     }
 }

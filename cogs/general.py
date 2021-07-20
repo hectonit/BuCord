@@ -287,6 +287,7 @@ class Other(commands.Cog):
                 "Вы не задали необходимые аргументы. Прочитайте **{}help** , возможно вы ошиблись.".format(prefix))
         else:
             await ctx.send("Произошла неожиданная ошибка")
+            #raise error
 
     @commands.command(name="help")
     async def help_(self, ctx, command_name=None):
@@ -305,7 +306,7 @@ class Other(commands.Cog):
         emb = discord.Embed(color=discord.Colour.random())
         if command_name is None:
             emb.title = "Секции команд бота BuCord:"
-            emb.description = "`модерация`,`экономика`,`общее`"
+            emb.description = "`модерация`,`экономика`,`общее`, `игры`"
             emb.set_footer(text=base_section)
         elif command_name == "модерация":
             emb.title = "Команды для модерации"
@@ -318,6 +319,10 @@ class Other(commands.Cog):
         elif command_name == "общее":
             emb.title = "Общие команды"
             emb.description = "`course`,`user_card`,`find_bug`,`bot_info`,`ping`, `help`"
+            emb.set_footer(text=base_command)
+        elif command_name == "игры":
+            emb.title = "Команды для игр"
+            emb.description = "`tictactoe`"
             emb.set_footer(text=base_command)
         else:
             emb.title = "Команда {}".format(command_name)
