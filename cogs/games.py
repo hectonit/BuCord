@@ -17,30 +17,13 @@ class Tictactoe(commands.Cog):
 
     @staticmethod
     def insert_table(table, ind, s):
-        if ind == 1:
-            index = 16
-        if ind == 2:
-            index = 20
-        if ind == 3:
-            index = 24
-        if ind == 4:
-            index = 44
-        if ind == 5:
-            index = 48
-        if ind == 6:
-            index = 52
-        if ind == 7:
-            index = 72
-        if ind == 8:
-            index = 76
-        if ind == 9:
-            index = 80
-        return table[:index] + s + table[index + 1:]
+        indexes = [0, 16, 20, 24, 44, 48, 52, 72, 76, 80]
+        return table[:indexes[ind]] + s + table[indexes[ind] + 1:]
 
 
     @staticmethod
     def is_win(checked, situation):
-        s = len(situation) % 2 + 1
+        s = 3 - (len(situation) % 2 + 1)
         if (checked[1] == checked[2] == checked[3] == s) or (checked[4] == checked[5] == checked[6] == s) or (checked[7] == checked[8] == checked[9] == s) or (checked[1] == checked[4] == checked[7] == s) or (checked[2] == checked[5] == checked[8] == s) or (checked[3] == checked[6] == checked[9] == s) or (checked[1] == checked[5] == checked[9] == s) or (checked[3] == checked[5] == checked[7] == s):
            return s
         elif all(checked[1:]):
@@ -51,34 +34,46 @@ class Tictactoe(commands.Cog):
         
     @staticmethod
     def precalc(difficulty, situation, checked):
-        precalced = {}
         res = Tictactoe.is_win(checked, situation)
-        precalced[situation] = {}
-        precalced[situation]["win"] = res
-        precalced[situation]["step"] = 0
+        precalced = {situation: {"win": res, "step": 0}}
         if res == 1:
             return precalced, 10
-        if res == 1:
+        if res == 2:
             return precalced, -10
         if res == 3:
             return precalced, 0
-        ranks = []
+        ranks_win = []
+        ranks_lose = []
+        ranks_draw = []
         for i in range(1, 10):
             if not checked[i]:
                 checked[i] = len(situation) % 2 + 1
-                situation += str(i)
-                p, rank = Tictactoe.precalc(difficulty, situation, checked)
+                p, rank = Tictactoe.precalc(difficulty, situation + str(i), checked)
                 checked[i] = 0
-                situation = situation[:-1]
                 precalced.update(p)
-                ranks.append((rank, i))
-        if difficulty == "easy" or difficulty == "medium":
-            rand = random.choice(ranks)
-            precalced[situation]["step"] = rand[1]
-            return precalced, rand[0]
-        precalced[situation]["step"] = max(ranks)[1]
-        return precalced, max(ranks)[0]
-        
+                if rank == 10:
+                    ranks_win.append((10, i))
+                elif rank == -10:
+                    ranks_lose.append((-10, i))
+                else:
+                    ranks_draw.append((0, i))
+        if len(situation) % 2:
+            precalced[situation]["step"] = min(ranks_win + ranks_draw + ranks_lose)[1]
+            return precalced, min(ranks_win + ranks_draw + ranks_lose)[0]
+        else:
+            if difficulty == "medium":
+                rand = ranks_draw + ranks_win
+                if not rand:
+                    rand += ranks_lose
+            elif difficulty == "easy":
+                rand = ranks_draw + ranks_lose + ranks_win
+            else:
+                precalced[situation]["step"] = max(ranks_win + ranks_draw + ranks_lose)[1]
+                return precalced, max(ranks_win + ranks_draw + ranks_lose)[0]
+            res = random.choice(rand)
+            precalced[situation]["step"] = res[1]
+            return precalced, res[0]
+
         
     @commands.command()
     async def tictactoe(self, ctx, difficulty="medium"):
@@ -90,9 +85,9 @@ class Tictactoe(commands.Cog):
             return
         await ctx.send("BuCord думает...")
         situation = "0"
-        precalced, rank = self.precalc(difficulty, situation, [0] * 10)
-        count = 0
         pole = [0] * 10
+        precalced, _rank = self.precalc(difficulty, situation, pole)
+        count = 0
         table = constraints.table
         while not precalced[situation]["win"]:
             emb = discord.Embed(color=discord.Colour.random())
@@ -109,19 +104,21 @@ class Tictactoe(commands.Cog):
             count += 1
             emb.title = "Твой ход! Напиши цифру клетки которая свободна"
             emb.description = "```\n" + table + "```"
-            emb.set_footer(text="отправьте нужную цифру в течении 30 секунд")
+            emb.set_footer(text="отправьте нужную цифру в течении 60 секунд")
             await ctx.send(embed=emb)
 
 
             def check(m):
-                return m.content.isalnum() and len(m.content) == 1 and 1 <= int(m.content) <= 9 and not pole[int(m.content)] and ctx.author == m.author and m.channel == ctx.channel
+                text = m.content
+                return text.isalnum() and len(text) == 1 and int(text) != 0 and not pole[int(text)] and ctx.author == m.author and m.channel == ctx.channel
 
 
             try:
-                msg = await self.bot.wait_for("message", timeout=30.0, check=check)
+                msg = await self.bot.wait_for("message", timeout=60.0, check=check)
             except asyncio.TimeoutError:
-                await ctx.send(ctx.author.mention, "время вышло!")
+                await ctx.send(ctx.author.mention + " время вышло!")
                 return
+            
             await ctx.send("Ход принят!")
             table = self.insert_table(table, int(msg.content), "X")
             pole[int(msg.content)] = 1

@@ -31,6 +31,7 @@ class Stuff(commands.Cog):
         await self.bot.change_presence(activity=activity)
 
         for guild in self.bot.guilds:
+            #continue
             if guild.name and guild.member_count < MAX_MEMBERS:
                 with con.cursor() as cur:
                     guilds = cur.fetch_row("SELECT * FROM guilds WHERE guild_id = %s;", guild.id)
@@ -41,6 +42,7 @@ class Stuff(commands.Cog):
                         if not member.bot and user is None:
                             cur.execute("INSERT INTO users (user_id,guild_id) VALUES (%s,%s);",
                                         member.id, guild.id)
+        #"""
         with con.cursor() as cur:
             members = cur.fetch("SELECT * FROM users;")
             for row in members:
@@ -48,6 +50,7 @@ class Stuff(commands.Cog):
                 if is_member is None:
                     cur.execute("DELETE FROM users WHERE user_id = %s AND guild_id = %s;", row["user_id"],
                                 row["guild_id"])
+        #"""
         self.status_change.start()
         self.work_time.start()
         print("Bot logged as {}".format(self.bot.user))
