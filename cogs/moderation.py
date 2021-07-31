@@ -2,7 +2,8 @@
 import discord
 from discord.ext import commands
 
-from useful_commands import connect
+import utils
+from utils.utils import connect
 
 con = connect()
 
@@ -27,28 +28,33 @@ class BotChange(commands.Cog):
         :type prefix: str
         """
         with con.cursor() as cur:
-            old_prefix = cur.fetch_val("SELECT prefix FROM guilds WHERE guild_id = %s;", ctx.guild.id)
+            old_prefix = cur.fetch_val(
+                "SELECT prefix FROM guilds WHERE guild_id = %s;", ctx.guild.id)
         try:
             prefix.encode("ascii")
         except UnicodeEncodeError:
             emb = discord.Embed(color=0xf55c47)
             emb.title = "Ошибка"
-            emb.add_field(name="Префикс не изменен!", value="Префикс может содержать только ascii символы")
+            emb.add_field(name="Префикс не изменен!",
+                          value="Префикс может содержать только ascii символы")
             emb.set_footer(text="Пример команды: {}help".format(old_prefix))
             await ctx.send(embed=emb)
             return
         if len(prefix) > 5:
             emb = discord.Embed(color=0xf55c47)
             emb.title = "Ошибка"
-            emb.add_field(name="Префикс не изменен!", value="Длина префикса не может превышать 5 символов")
+            emb.add_field(name="Префикс не изменен!",
+                          value="Длина префикса не может превышать 5 символов")
             emb.set_footer(text="Пример команды: {}help".format(old_prefix))
             await ctx.send(embed=emb)
             return
         with con.cursor() as cur:
-            cur.execute("UPDATE guilds SET prefix = %s WHERE guild_id = %s;", prefix, ctx.guild.id)
+            cur.execute(
+                "UPDATE guilds SET prefix = %s WHERE guild_id = %s;", prefix, ctx.guild.id)
         emb = discord.Embed(color=0x2ecc71)
         emb.title = "Обновление"
-        emb.add_field(name="Новый префикс!", value="Префикс успешно изменен с {} на {}".format(old_prefix, prefix))
+        emb.add_field(name="Новый префикс!", value="Префикс успешно изменен с {} на {}".format(
+            old_prefix, prefix))
         emb.set_footer(text="Пример команды: {}help".format(prefix))
         await ctx.send(embed=emb)
 
@@ -111,11 +117,12 @@ class UserChange(commands.Cog):
             await ctx.send("Введите число.")
             return
         with con.cursor() as cur:
-            prev_money = cur.fetch_val("SELECT money FROM users WHERE user_id = %s AND guild_id = %s;", member.id, ctx.guild.id)
+            prev_money = cur.fetch_val(
+                "SELECT money FROM users WHERE user_id = %s AND guild_id = %s;", member.id, ctx.guild.id)
             if -2147483648 <= prev_money + money <= 2147483649:
                 cur.execute("UPDATE users SET money = %s WHERE user_id = %s AND guild_id = %s;", prev_money + money,
-                        member.id,
-                        ctx.guild.id)
+                            member.id,
+                            ctx.guild.id)
                 await ctx.send("{} вам выдано {} монет".format(member.mention, money))
             else:
                 await ctx.send("Образовались слишком большие числа :(")

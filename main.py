@@ -4,8 +4,10 @@ import dbl
 import discord
 from discord.ext import commands
 
-from constraints import BOT_TOKEN, DBL_TOKEN
-from useful_commands import connect
+import configs
+import utils
+from configs.constants import BOT_TOKEN, DBL_TOKEN
+from utils.utils import connect
 
 con = connect()
 
@@ -26,7 +28,8 @@ async def dynamic_prefix(pref_bot, message):
         return await pref_bot.get_prefix(message)
     else:
         with con.cursor() as cur:
-            prefix = cur.fetch_val("SELECT prefix FROM guilds WHERE guild_id = %s", guild.id)
+            prefix = cur.fetch_val(
+                "SELECT prefix FROM guilds WHERE guild_id = %s", guild.id)
         return commands.when_mentioned_or(prefix)(pref_bot, message)
 
 

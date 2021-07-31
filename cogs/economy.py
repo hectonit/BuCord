@@ -4,7 +4,8 @@ import random
 import discord
 from discord.ext import commands
 
-from useful_commands import show_real_nick, connect
+import utils
+from utils.utils import show_real_nick, connect
 
 con = connect()
 
@@ -45,7 +46,8 @@ class General(commands.Cog):
         :param ctx: context
         :type ctx: commands.Context
         """
-        emb = discord.Embed(color=discord.Colour.random(), title="Топ сервера {}".format(ctx.guild.name))
+        emb = discord.Embed(color=discord.Colour.random(),
+                            title="Топ сервера {}".format(ctx.guild.name))
         title = "#{} - {}"
         value = "Монеты: **{}**"
         with con.cursor() as cur:
@@ -108,8 +110,8 @@ class Casino(commands.Cog):
             if -2147483648 <= final_finance <= 2147483649:
                 cur.execute(
                     "UPDATE users SET money = %s WHERE user_id = %s AND guild_id = %s;", final_finance,
-                                                                                         ctx.author.id,
-                                                                                         ctx.guild.id)
+                    ctx.author.id,
+                    ctx.guild.id)
             else:
                 await ctx.send("Образовались слишком большие числа :(")
 

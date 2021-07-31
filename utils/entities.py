@@ -1,4 +1,4 @@
-"""module for my models"""
+"""module for my entities"""
 import psycopg2
 
 

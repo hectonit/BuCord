@@ -1,10 +1,12 @@
-"""module for some useful commands"""
+"""module for some utils"""
 
 import discord
 import psycopg2
 
-from constraints import DATABASE_URL
-from instances import Cursor
+import configs
+import utils
+from configs.constants import DATABASE_URL
+from utils.entities import Cursor
 
 
 def connect():

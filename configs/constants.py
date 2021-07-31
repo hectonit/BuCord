@@ -2,7 +2,7 @@
 import os
 
 try:
-    import configs
+    from . import configs
 except ModuleNotFoundError:
     DBL_TOKEN = os.environ.get("DBL_TOKEN")
     DATABASE_URL = os.environ.get('DATABASE_URL')
@@ -11,9 +11,13 @@ else:
     DBL_TOKEN = configs.dbltoken
     DATABASE_URL = configs.database
     BOT_TOKEN = configs.token
+
 MAX_MEMBERS = 10000
+
 MY_ID = 530751275663491092
+
 table = "+---+---+---+\n| 1 | 2 | 3 |\n+---+---+---+\n| 4 | 5 | 6 |\n+---+---+---+\n| 7 | 8 | 9 |\n+---+---+---+"
+
 commands_descriptions = {
     "help": {
         "info": "выводит справку по командам",

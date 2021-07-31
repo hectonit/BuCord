@@ -1,37 +1,38 @@
 """code of different games"""
+
 import asyncio
 import random
+
 import discord
 from discord.ext import commands, tasks
 
-import constraints
+import configs
+from configs import constants
 
 
 class Tictactoe(commands.Cog):
     """
     functions for tictactoe
     """
+
     def __init__(self, bot):
         self.bot = bot
-
 
     @staticmethod
     def insert_table(table, ind, s):
         indexes = [0, 16, 20, 24, 44, 48, 52, 72, 76, 80]
         return table[:indexes[ind]] + s + table[indexes[ind] + 1:]
 
-
     @staticmethod
     def is_win(checked, situation):
         s = 3 - (len(situation) % 2 + 1)
         if (checked[1] == checked[2] == checked[3] == s) or (checked[4] == checked[5] == checked[6] == s) or (checked[7] == checked[8] == checked[9] == s) or (checked[1] == checked[4] == checked[7] == s) or (checked[2] == checked[5] == checked[8] == s) or (checked[3] == checked[6] == checked[9] == s) or (checked[1] == checked[5] == checked[9] == s) or (checked[3] == checked[5] == checked[7] == s):
-           return s
+            return s
         elif all(checked[1:]):
             return 3
         else:
             return 0
 
-        
     @staticmethod
     def precalc(difficulty, situation, checked):
         res = Tictactoe.is_win(checked, situation)
@@ -48,7 +49,8 @@ class Tictactoe(commands.Cog):
         for i in range(1, 10):
             if not checked[i]:
                 checked[i] = len(situation) % 2 + 1
-                p, rank = Tictactoe.precalc(difficulty, situation + str(i), checked)
+                p, rank = Tictactoe.precalc(
+                    difficulty, situation + str(i), checked)
                 checked[i] = 0
                 precalced.update(p)
                 if rank == 10:
@@ -58,23 +60,23 @@ class Tictactoe(commands.Cog):
                 else:
                     ranks_draw.append((0, i))
         if len(situation) % 2:
-            precalced[situation]["step"] = min(ranks_win + ranks_draw + ranks_lose)[1]
+            precalced[situation]["step"] = min(
+                ranks_win + ranks_draw + ranks_lose)[1]
             return precalced, min(ranks_win + ranks_draw + ranks_lose)[0]
+        if difficulty == "medium":
+            rand = ranks_draw + ranks_win
+            if not rand:
+                rand += ranks_lose
+        elif difficulty == "easy":
+            rand = ranks_draw + ranks_lose + ranks_win
         else:
-            if difficulty == "medium":
-                rand = ranks_draw + ranks_win
-                if not rand:
-                    rand += ranks_lose
-            elif difficulty == "easy":
-                rand = ranks_draw + ranks_lose + ranks_win
-            else:
-                precalced[situation]["step"] = max(ranks_win + ranks_draw + ranks_lose)[1]
-                return precalced, max(ranks_win + ranks_draw + ranks_lose)[0]
-            res = random.choice(rand)
-            precalced[situation]["step"] = res[1]
-            return precalced, res[0]
+            precalced[situation]["step"] = max(
+                ranks_win + ranks_draw + ranks_lose)[1]
+            return precalced, max(ranks_win + ranks_draw + ranks_lose)[0]
+        res = random.choice(rand)
+        precalced[situation]["step"] = res[1]
+        return precalced, res[0]
 
-        
     @commands.command()
     async def tictactoe(self, ctx, difficulty="medium"):
         """
@@ -88,7 +90,7 @@ class Tictactoe(commands.Cog):
         pole = [0] * 10
         precalced, _rank = self.precalc(difficulty, situation, pole)
         count = 0
-        table = constraints.table
+        table = constants.table
         while not precalced[situation]["win"]:
             emb = discord.Embed(color=discord.Colour.random())
             if count % 2 == 1:
@@ -107,18 +109,16 @@ class Tictactoe(commands.Cog):
             emb.set_footer(text="отправьте нужную цифру в течении 60 секунд")
             await ctx.send(embed=emb)
 
-
             def check(m):
                 text = m.content
                 return text.isalnum() and len(text) == 1 and int(text) != 0 and not pole[int(text)] and ctx.author == m.author and m.channel == ctx.channel
-
 
             try:
                 msg = await self.bot.wait_for("message", timeout=60.0, check=check)
             except asyncio.TimeoutError:
                 await ctx.send(ctx.author.mention + " время вышло!")
                 return
-            
+
             await ctx.send("Ход принят!")
             table = self.insert_table(table, int(msg.content), "X")
             pole[int(msg.content)] = 1
