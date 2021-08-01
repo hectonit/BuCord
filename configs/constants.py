@@ -5,12 +5,18 @@ try:
     from . import configs
 except ModuleNotFoundError:
     DBL_TOKEN = os.environ.get("DBL_TOKEN")
-    DATABASE_URL = os.environ.get('DATABASE_URL')
-    BOT_TOKEN = os.environ.get('BOT_TOKEN')
+    DATABASE_URL = os.environ.get("DATABASE_URL")
+    BOT_TOKEN = os.environ.get("BOT_TOKEN")
+    REDIS_HOST = os.environ.get("REDIS_HOST")
+    REDIS_PORT = os.environ.get("REDIS_PORT")
+    REDIS_PASS = os.environ.get("REDIS_PASS")
 else:
     DBL_TOKEN = configs.dbltoken
     DATABASE_URL = configs.database
     BOT_TOKEN = configs.token
+    REDIS_HOST = configs.redis_host
+    REDIS_PORT = configs.redis_port
+    REDIS_PASS = configs.redis_pass
 
 MAX_MEMBERS = 10000
 

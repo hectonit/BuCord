@@ -1,6 +1,7 @@
 """general cog"""
 import platform
 import sys
+import time
 
 import aiohttp
 import discord
@@ -9,9 +10,10 @@ from discord.ext import commands, tasks
 import configs
 import utils
 from configs.constants import commands_descriptions, MAX_MEMBERS, MY_ID
-from utils.utils import show_real_nick, connect
+from utils.utils import show_real_nick, connect, redis_connect
 
 con = connect()
+redis_con = redis_connect()
 
 
 class Stuff(commands.Cog):
@@ -57,7 +59,7 @@ class Stuff(commands.Cog):
                                 row["guild_id"])
         # """
         self.status_change.start()
-        self.work_time.start()
+        redis_con.set("work_time", int(time.time()))
         print("Bot logged as {}".format(self.bot.user))
 
     @commands.Cog.listener()
@@ -109,14 +111,6 @@ class Stuff(commands.Cog):
         name = ".help | {} servers".format(len(self.bot.guilds))
         activity = discord.Activity(name=name, type=ac_type)
         await self.bot.change_presence(activity=activity)
-
-    @tasks.loop(minutes=1.0)
-    async def work_time(self):
-        """
-        plus work_time for stuff
-        """
-        with con.cursor() as cur:
-            cur.execute("UPDATE bot_info SET work_time = work_time + 1;")
 
     @commands.command()
     async def user_card(self, ctx, member: discord.Member = None):
@@ -177,12 +171,12 @@ class Stuff(commands.Cog):
             len(self.bot.guilds)))
         emb.add_field(name="CPU:", value="```{}```".format(
             platform.processor()))
-        with con.cursor() as cur:
-            work = cur.fetch_val("SELECT work_time FROM bot_info;")
-        hours = work // 60
-        minutes = work % 60
+        work_time = int(time.time()) - int(redis_con.get("work_time"))
+        work_time_min = work_time // 60
+        hours = work_time_min // 60
+        minutes = work_time_min % 60
         emb.add_field(name="Время работы:", value=(
-            "```{} часов , {} минут```".format(hours, minutes)))
+            "```{} mins, {} hours```".format(minutes, hours)))
         await ctx.send(embed=emb)
 
     @commands.command()
@@ -305,7 +299,7 @@ class Other(commands.Cog):
                 "Вы не задали необходимые аргументы. Прочитайте **{}help** , возможно вы ошиблись.".format(prefix))
         else:
             await ctx.send("Произошла неожиданная ошибка")
-            #raise error
+            # raise error
 
     @commands.command(name="help")
     async def help_(self, ctx, command_name=None):
