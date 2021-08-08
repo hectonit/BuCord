@@ -1,24 +1,22 @@
 """module for some utils"""
 
 import discord
-import psycopg2
+import asyncpg
 import redis
 
 import configs
 import utils
 from configs.constants import DATABASE_URL, REDIS_HOST, REDIS_PASS, REDIS_PORT
-from utils.entities import Cursor
 
 
-def connect():
+async def connect():
     """
     create db connection
 
     :return: connection
     :rtype: psycopg2.extensions.connection
     """
-    con = psycopg2.connect(DATABASE_URL, cursor_factory=Cursor)
-    con.autocommit = True
+    con = await asyncpg.connect(dsn=DATABASE_URL)
     return con
 
 

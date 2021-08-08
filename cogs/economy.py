@@ -5,124 +5,88 @@ import discord
 from discord.ext import commands
 
 import utils
-from utils.utils import show_real_nick, connect
-
-con = connect()
+from utils.utils import show_real_nick
+from utils.db import *
 
 
 class General(commands.Cog):
-    """
-    general economy class
-    """
 
     def __init__(self, bot):
         self.bot = bot
 
     @commands.command()
     async def balance(self, ctx, member: discord.Member = None):
-        """
-        output member balance
-
-        :param ctx: context
-        :type ctx: commands.Context
-        :param member: member
-        :type member: discord.Member
-        """
         if member is None:
             member = ctx.author
+
+        member_info = await get_member_info(member.id, ctx.guild.id)
+        user_balance = member_info["money"]
+
         emb = discord.Embed(color=discord.Colour.random())
-        with con.cursor() as cur:
-            user_finance = cur.fetch_val("SELECT money FROM users WHERE user_id = %s AND guild_id = %s;",
-                                         member.id, ctx.guild.id)
         emb.set_author(name="Баланс {} : {}$".format(
-            show_real_nick(member), user_finance), icon_url=member.avatar_url)
+            show_real_nick(member), user_balance), icon_url=member.avatar_url)
         await ctx.send(embed=emb)
 
     @commands.command()
     async def top(self, ctx):
-        """
-        output top of server by money
-
-        :param ctx: context
-        :type ctx: commands.Context
-        """
         emb = discord.Embed(color=discord.Colour.random(),
                             title="Топ сервера {}".format(ctx.guild.name))
         title = "#{} - {}"
         value = "Монеты: **{}**"
-        with con.cursor() as cur:
-            top_users = cur.fetch(
-                "SELECT user_id,money FROM users WHERE guild_id = %s ORDER BY money DESC;", ctx.guild.id)
-        for ind, record in zip(range(1, 11), top_users[:10]):
+
+        top_users = await get_all_members_ordered(ctx.guild.id)
+        for index, record in zip(range(1, 11), top_users[:10]):
             member = self.bot.get_user(record["user_id"])
-            subtitle = title.format(ind, show_real_nick(member))
+            subtitle = title.format(index, show_real_nick(member))
             sub_value = value.format(record["money"])
             emb.add_field(name=subtitle, value=sub_value, inline=False)
+
         await ctx.send(embed=emb)
 
 
 class Casino(commands.Cog):
-    """
-    class for casino functions
-    """
 
     def __init__(self, bot):
         self.bot = bot
 
     @commands.command()
     async def bet(self, ctx, money):
-        """
-        bet some money
+        member_info = await get_member_info(ctx.author.id, ctx.guild.id)
+        user_balance = member_info["money"]
 
-        :param ctx: context
-        :type ctx: commands.Context
-        :param money: amount of money to bet
-        :type money: int
-        :return: None
-        :rtype: None
-        """
-        with con.cursor() as cur:
-            user_finance = cur.fetch_val("SELECT money FROM users WHERE user_id = %s AND guild_id = %s;",
-                                         ctx.author.id, ctx.guild.id)
-            if money == "all":
-                money = user_finance
-            elif money.isdigit():
-                money = int(money)
-            else:
-                await ctx.send("Введите число.")
-                return
-            if money > user_finance or money <= 0:
-                await ctx.send("Число введено неверно.")
-                return
-            pot = random.randint(0, 100)
-            if pot == 1:
-                final_finance = money * 10
-                await ctx.send(
-                    "{}, поздравляем!Вы забрали джекпот!!!".format(ctx.author.mention))
-            else:
-                multi = random.randint(0, 20) / 10
-                final_result = int(money * multi)
-                final_finance = user_finance - money + final_result
-                emb = discord.Embed(color=discord.Colour.random())
-                emb.title = ("Ставка: {}$\nМножитель: {}\nВыигрыш: {}$".format(
-                    money, multi, final_result))
-                await ctx.send(embed=emb)
-            if -2147483648 <= final_finance <= 2147483649:
-                cur.execute(
-                    "UPDATE users SET money = %s WHERE user_id = %s AND guild_id = %s;", final_finance,
-                    ctx.author.id,
-                    ctx.guild.id)
-            else:
-                await ctx.send("Образовались слишком большие числа :(")
+        if money == "all":
+            money = user_balance
+        elif money.isdigit():
+            money = int(money)
+        else:
+            await ctx.send("Введите число.")
+            return
+        if money > user_balance or money <= 0:
+            await ctx.send("Число введено неверно.")
+            return
+
+        rand = random.randint(0, 100)
+        if rand == 1:
+            final_balance = user_balance + money * 9
+            await ctx.send(
+                "{}, поздравляем!Вы забрали джекпот!!!".format(ctx.author.mention))
+        else:
+            multi = random.randint(0, 20) / 10
+            final_result = int(money * multi)
+            final_balance = user_balance - money + final_result
+
+        if -2147483648 <= final_balance <= 2147483649:
+            member_info["money"] = final_balance
+            await update_member(ctx.author.id, ctx.guild.id, member_info)
+            emb = discord.Embed(color=discord.Colour.random())
+            emb.title = ("Ставка: {}$\nМножитель: {}\nВыигрыш: {}$".format(
+                money, multi, final_result))
+            await ctx.send(embed=emb)
+        else:
+            await ctx.send("Образовались слишком большие числа :(")
 
 
 def setup(bot):
-    """
-    setup cog
-
-    :param bot: discord bot
-    :type bot: commands.Bot
-    """
     bot.add_cog(General(bot))
     bot.add_cog(Casino(bot))
     print("Economy finished")

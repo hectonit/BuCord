@@ -7,9 +7,7 @@ from discord.ext import commands
 import configs
 import utils
 from configs.constants import BOT_TOKEN, DBL_TOKEN
-from utils.utils import connect
-
-con = connect()
+from utils.db import *
 
 
 async def dynamic_prefix(pref_bot, message):
@@ -27,9 +25,8 @@ async def dynamic_prefix(pref_bot, message):
     if guild is None:
         return await pref_bot.get_prefix(message)
     else:
-        with con.cursor() as cur:
-            prefix = cur.fetch_val(
-                "SELECT prefix FROM guilds WHERE guild_id = %s", guild.id)
+        guild_info = await get_guild_info(guild.id)
+        prefix = guild_info["prefix"]
         return commands.when_mentioned_or(prefix)(pref_bot, message)
 
 

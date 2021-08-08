@@ -11,9 +11,6 @@ from configs import constants
 
 
 class Tictactoe(commands.Cog):
-    """
-    functions for tictactoe
-    """
 
     def __init__(self, bot):
         self.bot = bot
@@ -36,6 +33,7 @@ class Tictactoe(commands.Cog):
     @staticmethod
     def precalc(difficulty, situation, checked):
         res = Tictactoe.is_win(checked, situation)
+
         precalced = {situation: {"win": res, "step": 0}}
         if res == 1:
             return precalced, 10
@@ -43,9 +41,11 @@ class Tictactoe(commands.Cog):
             return precalced, -10
         if res == 3:
             return precalced, 0
+
         ranks_win = []
         ranks_lose = []
         ranks_draw = []
+
         for i in range(1, 10):
             if not checked[i]:
                 checked[i] = len(situation) % 2 + 1
@@ -53,12 +53,14 @@ class Tictactoe(commands.Cog):
                     difficulty, situation + str(i), checked)
                 checked[i] = 0
                 precalced.update(p)
+
                 if rank == 10:
                     ranks_win.append((10, i))
                 elif rank == -10:
                     ranks_lose.append((-10, i))
                 else:
                     ranks_draw.append((0, i))
+
         if len(situation) % 2:
             precalced[situation]["step"] = min(
                 ranks_win + ranks_draw + ranks_lose)[1]
@@ -73,6 +75,7 @@ class Tictactoe(commands.Cog):
             precalced[situation]["step"] = max(
                 ranks_win + ranks_draw + ranks_lose)[1]
             return precalced, max(ranks_win + ranks_draw + ranks_lose)[0]
+
         res = random.choice(rand)
         precalced[situation]["step"] = res[1]
         return precalced, res[0]
@@ -85,12 +88,14 @@ class Tictactoe(commands.Cog):
         if difficulty != "medium" and difficulty != "easy" and difficulty != "hard":
             await ctx.send("Выберете нормальную сложность: `easy`, `medium` или `hard`")
             return
+
         await ctx.send("BuCord думает...")
         situation = "0"
         pole = [0] * 10
         precalced, _rank = self.precalc(difficulty, situation, pole)
         count = 0
         table = constants.table
+
         while not precalced[situation]["win"]:
             emb = discord.Embed(color=discord.Colour.random())
             if count % 2 == 1:
@@ -103,6 +108,7 @@ class Tictactoe(commands.Cog):
                 emb.description = "```\n" + table + "```"
                 await ctx.send(embed=emb)
                 continue
+
             count += 1
             emb.title = "Твой ход! Напиши цифру клетки которая свободна"
             emb.description = "```\n" + table + "```"
@@ -123,6 +129,7 @@ class Tictactoe(commands.Cog):
             table = self.insert_table(table, int(msg.content), "X")
             pole[int(msg.content)] = 1
             situation += msg.content
+
         emb = discord.Embed()
         if precalced[situation]["win"] == 1:
             await ctx.send("BuCord победил!")
@@ -133,11 +140,5 @@ class Tictactoe(commands.Cog):
 
 
 def setup(bot):
-    """
-    setup cog
-
-    :param bot: discord bot
-    :type bot: commands.Bot
-    """
     bot.add_cog(Tictactoe(bot))
     print("Games finished")
