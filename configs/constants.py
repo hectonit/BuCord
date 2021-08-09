@@ -3,7 +3,7 @@ import os
 
 try:
     from . import configs
-except ModuleNotFoundError:
+except ImportError:
     DBL_TOKEN = os.environ.get("DBL_TOKEN")
     DATABASE_URL = os.environ.get("DATABASE_URL")
     BOT_TOKEN = os.environ.get("BOT_TOKEN")
