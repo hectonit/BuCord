@@ -4,9 +4,8 @@ import asyncio
 import random
 
 import discord
-from discord.ext import commands, tasks
+from discord.ext import commands
 
-import configs
 from configs import constants
 
 
@@ -23,7 +22,14 @@ class Tictactoe(commands.Cog):
     @staticmethod
     def is_win(checked, situation):
         s = 3 - (len(situation) % 2 + 1)
-        if (checked[1] == checked[2] == checked[3] == s) or (checked[4] == checked[5] == checked[6] == s) or (checked[7] == checked[8] == checked[9] == s) or (checked[1] == checked[4] == checked[7] == s) or (checked[2] == checked[5] == checked[8] == s) or (checked[3] == checked[6] == checked[9] == s) or (checked[1] == checked[5] == checked[9] == s) or (checked[3] == checked[5] == checked[7] == s):
+        if ((checked[1] == checked[2] == checked[3] == s) or
+            (checked[4] == checked[5] == checked[6] == s) or
+            (checked[7] == checked[8] == checked[9] == s) or
+            (checked[1] == checked[4] == checked[7] == s) or
+            (checked[2] == checked[5] == checked[8] == s) or
+            (checked[3] == checked[6] == checked[9] == s) or
+            (checked[1] == checked[5] == checked[9] == s) or
+                (checked[3] == checked[5] == checked[7] == s)):
             return s
         elif all(checked[1:]):
             return 3
@@ -85,8 +91,9 @@ class Tictactoe(commands.Cog):
         """
         all interaction with user during playing
         """
-        if difficulty != "medium" and difficulty != "easy" and difficulty != "hard":
-            await ctx.send("Выберете нормальную сложность: `easy`, `medium` или `hard`")
+        if difficulty not in ("easy", "medium", "hard"):
+            await ctx.send("Выберете нормальную сложность:" +
+                           "`easy`, `medium` или `hard`")
             return
 
         await ctx.send("BuCord думает...")
@@ -117,10 +124,13 @@ class Tictactoe(commands.Cog):
 
             def check(m):
                 text = m.content
-                return text.isalnum() and len(text) == 1 and int(text) != 0 and not pole[int(text)] and ctx.author == m.author and m.channel == ctx.channel
+                return (text.isalnum() and len(text) == 1 and int(text) != 0
+                        and not pole[int(text)] and
+                        ctx.author == m.author and m.channel == ctx.channel)
 
             try:
-                msg = await self.bot.wait_for("message", timeout=60.0, check=check)
+                msg = await self.bot.wait_for("message",
+                                              timeout=60.0, check=check)
             except asyncio.TimeoutError:
                 await ctx.send(ctx.author.mention + " время вышло!")
                 return
