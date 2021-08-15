@@ -4,9 +4,8 @@ import random
 import discord
 from discord.ext import commands
 
-import utils
 from utils.utils import show_real_nick
-from utils.db import *
+from utils.db import get_member_info, get_all_members_ordered, update_member
 
 
 class General(commands.Cog):
@@ -69,7 +68,8 @@ class Casino(commands.Cog):
         if rand == 1:
             final_balance = user_balance + money * 9
             await ctx.send(
-                "{}, поздравляем!Вы забрали джекпот!!!".format(ctx.author.mention))
+                "{}, поздравляем!\n".format(ctx.author.mention)
+                + "Вы забрали джекпот!!!")
         else:
             multi = random.randint(0, 20) / 10
             final_result = int(money * multi)
