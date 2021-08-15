@@ -13,6 +13,7 @@ from configs.constants import commands_descriptions, MAX_MEMBERS, MY_ID
 from utils.utils import show_real_nick, redis_connect
 from utils.db import *
 
+redis_con = redis_connect()
 
 class Statistics(commands.Cog):
     def __init__(self, bot):
