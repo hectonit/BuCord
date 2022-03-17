@@ -14,7 +14,7 @@ This bot has four sections of commands:
     * tictactoe
 * **general**
     * user_card
-    * course
+    * exchange_rate
     * bot_info
     * ping
     * help
@@ -27,6 +27,6 @@ This bot has four sections of commands:
 
 ## Development
 
-I writes code for this bot by myself.
+I write code for this bot by myself.
 
 Thanks Ar1gin#9156 for testing :3
